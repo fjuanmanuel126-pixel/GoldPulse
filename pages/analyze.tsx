@@ -173,13 +173,21 @@ export default function Analyze() {
 
     setLoading(true);
     try {
+      const supabase = getSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
       const fd = new FormData();
       fd.append("symbol", symbol);
       fd.append("timeframe", timeframe);
       fd.append("currentPrice", String(price));
       if (file) fd.append("image", file);
 
-      const r = await fetch("/api/analyze", { method: "POST", body: fd });
+      const r = await fetch("/api/analyze", {
+        method: "POST",
+        body: fd,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
       const text = await r.text();
       let j: any = null;
@@ -289,6 +297,13 @@ export default function Analyze() {
     );
   }
 
+  const usageDisplay =
+    accessLevel === "admin"
+      ? "∞"
+      : meta
+      ? `${meta.usedToday}/${meta.limit} hoy`
+      : "—";
+
   return (
     <div className="gp-page">
       <div className="gp-wrap">
@@ -356,7 +371,7 @@ export default function Analyze() {
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Uso hoy</div>
-                <div className="gp-statValueSmall">{meta ? `${meta.usedToday}/${meta.limit}` : "—"}</div>
+                <div className="gp-statValueSmall">{usageDisplay}</div>
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Diario</div>
@@ -367,7 +382,7 @@ export default function Analyze() {
         </section>
 
         <div className="gp-grid">
-          <div style={{ display: "grid", gap: 18 }}>
+          <div className="gp-leftCol">
             <div className="gp-card">
               <div className="gp-cardHeader">
                 <div>
@@ -392,7 +407,7 @@ export default function Analyze() {
               </div>
             </div>
 
-            {premium ? (
+            {premium && (
               <ResultCard
                 title={premium.title || "GoldPulse Premium (Institucional)"}
                 side={premium.side}
@@ -408,22 +423,23 @@ export default function Analyze() {
                 bias={premium.bias}
                 sections={premium.sections}
               />
-            ) : (
-              <EmptyCard
-                title="Señal Premium"
-                text="Aquí aparecerá la señal premium institucional cuando generes el análisis."
-              />
             )}
           </div>
 
-          <div style={{ display: "grid", gap: 18 }}>
+          <div className="gp-rightCol">
             <div className="gp-card">
               <div className="gp-cardHeader">
                 <div>
                   <div className="gp-cardTitle">Generador de Señales IA</div>
                   <div className="gp-cardMeta">Premium + Scalp</div>
                 </div>
-                <div className="gp-cardMeta">{meta ? `${meta.remaining} restantes` : "—"}</div>
+                <div className="gp-cardMeta">
+                  {accessLevel === "admin"
+                    ? "∞ restantes"
+                    : meta
+                    ? `${meta.remaining} restantes`
+                    : "—"}
+                </div>
               </div>
 
               <div className="gp-cardBody">
@@ -500,7 +516,7 @@ export default function Analyze() {
               </div>
             </div>
 
-            {flash ? (
+            {flash && (
               <ResultCard
                 title="GoldPulse Scalp"
                 side={flash.side}
@@ -513,11 +529,6 @@ export default function Analyze() {
                 tp3={flash.tp3}
                 thesisTitle="Impulso"
                 rationale={flash.rationale}
-              />
-            ) : (
-              <EmptyCard
-                title="GoldPulse Scalp"
-                text="Aquí aparecerá la señal rápida de scalp cuando generes el análisis."
               />
             )}
           </div>
@@ -547,6 +558,7 @@ export default function Analyze() {
         .gp-page {
           min-height: 100vh;
           color: #eaf3ff;
+          overflow-x: hidden;
           background:
             radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
             radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
@@ -716,6 +728,13 @@ export default function Analyze() {
           display: grid;
           grid-template-columns: 1.05fr 0.95fr;
           gap: 16px;
+          align-items: start;
+        }
+
+        .gp-leftCol,
+        .gp-rightCol {
+          display: grid;
+          gap: 18px;
         }
 
         .gp-card {
@@ -1039,12 +1058,8 @@ export default function Analyze() {
             height: 42px;
           }
 
-          .gp-topTitle {
-            font-size: 16px;
-          }
-
-          .gp-topSub {
-            font-size: 12px;
+          .gp-topInfo {
+            display: none;
           }
 
           .gp-heroCard,
@@ -1089,15 +1104,6 @@ export default function Analyze() {
   );
 }
 
-function EmptyCard({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="gp-emptyCard">
-      <div className="gp-emptyTitle">{title}</div>
-      <div className="gp-emptyText">{text}</div>
-    </div>
-  );
-}
-
 function ResultCard(props: {
   title: string;
   side: "BUY" | "SELL";
@@ -1133,7 +1139,7 @@ function ResultCard(props: {
 
       <div className="gp-cardBody">
         {props.bias?.label ? (
-          <div className="gp-section">
+          <div className="gp-section" style={{ marginBottom: 10 }}>
             <div className="gp-sectionTitle">Bias del día</div>
             <div className="gp-sectionText">
               <strong>{props.bias.label}</strong> — {props.bias.explanation}
@@ -1163,14 +1169,12 @@ function ResultCard(props: {
               <div className="gp-v gp-green">{props.tp1}</div>
             </div>
           )}
-
           {typeof props.tp2 === "number" && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 2</div>
               <div className="gp-v gp-green">{props.tp2}</div>
             </div>
           )}
-
           {typeof props.tp3 === "number" && props.tp3 !== 0 && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 3</div>
@@ -1191,14 +1195,12 @@ function ResultCard(props: {
               <div className="gp-sectionText">{props.sections.technical}</div>
             </div>
           )}
-
           {props.sections?.fundamental && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Análisis Fundamental</div>
               <div className="gp-sectionText">{props.sections.fundamental}</div>
             </div>
           )}
-
           {props.sections?.sentiment && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Sentimiento del Mercado</div>
