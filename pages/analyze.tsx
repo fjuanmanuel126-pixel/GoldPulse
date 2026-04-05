@@ -173,21 +173,13 @@ export default function Analyze() {
 
     setLoading(true);
     try {
-      const supabase = getSupabaseClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
       const fd = new FormData();
       fd.append("symbol", symbol);
       fd.append("timeframe", timeframe);
       fd.append("currentPrice", String(price));
       if (file) fd.append("image", file);
 
-      const r = await fetch("/api/analyze", {
-        method: "POST",
-        body: fd,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const r = await fetch("/api/analyze", { method: "POST", body: fd });
 
       const text = await r.text();
       let j: any = null;
@@ -297,13 +289,6 @@ export default function Analyze() {
     );
   }
 
-  const usageDisplay =
-    accessLevel === "admin"
-      ? "∞"
-      : meta
-      ? `${meta.usedToday}/${meta.limit} hoy`
-      : "—";
-
   return (
     <div className="gp-page">
       <div className="gp-wrap">
@@ -371,7 +356,7 @@ export default function Analyze() {
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Uso hoy</div>
-                <div className="gp-statValueSmall">{usageDisplay}</div>
+                <div className="gp-statValueSmall">{meta ? `${meta.usedToday}/${meta.limit}` : "—"}</div>
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Diario</div>
@@ -381,149 +366,161 @@ export default function Analyze() {
           </div>
         </section>
 
-        <div className="gp-mainStack">
-          <div className="gp-card">
-            <div className="gp-cardHeader">
-              <div>
-                <div className="gp-cardTitle">TradingView (Vista comercial)</div>
-                <div className="gp-cardMeta">
-                  {symbol} · {timeframe}
+        <div className="gp-grid">
+          <div style={{ display: "grid", gap: 18 }}>
+            <div className="gp-card">
+              <div className="gp-cardHeader">
+                <div>
+                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
+                  <div className="gp-cardMeta">
+                    {symbol} · {timeframe}
+                  </div>
                 </div>
+                <div className="gp-livePill">Live</div>
               </div>
-              <div className="gp-livePill">Live</div>
+
+              <div className="gp-chartWrap">
+                <iframe
+                  key={`${symbol}-${tvInterval}`}
+                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
+                    symbol
+                  )}&interval=${encodeURIComponent(
+                    tvInterval
+                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
+                  className="gp-tvFrame"
+                />
+              </div>
             </div>
 
-            <div className="gp-chartWrap">
-              <iframe
-                key={`${symbol}-${tvInterval}`}
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
-                  symbol
-                )}&interval=${encodeURIComponent(
-                  tvInterval
-                )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
-                className="gp-tvFrame"
+            {premium ? (
+              <ResultCard
+                title={premium.title || "GoldPulse Premium (Institucional)"}
+                side={premium.side}
+                confidence={premium.confidence}
+                entryLabel="Entrada institucional"
+                entryValue={premium.entry}
+                sl={premium.sl}
+                tp1={premium.tp1}
+                tp2={premium.tp2}
+                tp3={premium.tp3}
+                thesisTitle="Tesis de entrada"
+                rationale={premium.rationale}
+                bias={premium.bias}
+                sections={premium.sections}
               />
-            </div>
+            ) : (
+              <EmptyCard
+                title="Señal Premium"
+                text="Aquí aparecerá la señal premium institucional cuando generes el análisis."
+              />
+            )}
           </div>
 
-          <div className="gp-card">
-            <div className="gp-cardHeader">
-              <div>
-                <div className="gp-cardTitle">Generador de Señales IA</div>
-                <div className="gp-cardMeta">Premium + Scalp</div>
-              </div>
-              <div className="gp-cardMeta">
-                {accessLevel === "admin" ? "∞ restantes" : meta ? `${meta.remaining} restantes` : "—"}
-              </div>
-            </div>
-
-            <div className="gp-cardBody">
-              <div className="gp-form">
+          <div style={{ display: "grid", gap: 18 }}>
+            <div className="gp-card">
+              <div className="gp-cardHeader">
                 <div>
-                  <div className="gp-label">Símbolo</div>
-                  <select className="gp-select" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-                    {SYMBOLS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="gp-cardTitle">Generador de Señales IA</div>
+                  <div className="gp-cardMeta">Premium + Scalp</div>
                 </div>
+                <div className="gp-cardMeta">{meta ? `${meta.remaining} restantes` : "—"}</div>
+              </div>
 
-                <div className="gp-row2">
+              <div className="gp-cardBody">
+                <div className="gp-form">
                   <div>
-                    <div className="gp-label">Periodo de tiempo</div>
-                    <select
-                      className="gp-select"
-                      value={timeframe}
-                      onChange={(e) => setTimeframe(e.target.value as any)}
-                    >
-                      {TIMEFRAMES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
+                    <div className="gp-label">Símbolo</div>
+                    <select className="gp-select" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
+                      {SYMBOLS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
                         </option>
                       ))}
                     </select>
                   </div>
 
+                  <div className="gp-row2">
+                    <div>
+                      <div className="gp-label">Periodo de tiempo</div>
+                      <select
+                        className="gp-select"
+                        value={timeframe}
+                        onChange={(e) => setTimeframe(e.target.value as any)}
+                      >
+                        {TIMEFRAMES.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="gp-label">Precio actual</div>
+                      <input
+                        className="gp-input"
+                        placeholder="Ej: 5076.91"
+                        value={currentPrice}
+                        onChange={(e) => setCurrentPrice(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <div className="gp-label">Precio actual</div>
-                    <input
-                      className="gp-input"
-                      placeholder="Ej: 5076.91"
-                      value={currentPrice}
-                      onChange={(e) => setCurrentPrice(e.target.value)}
-                    />
+                    <div className="gp-label">Gráfico (opcional)</div>
+                    <div className="gp-uploadRow">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null;
+                          setFile(f);
+                          setFileName(f ? f.name : "No has subido imagen");
+                        }}
+                      />
+                      <button type="button" className="gp-uploadBtn" onClick={() => fileRef.current?.click()}>
+                        📎 Cargar
+                      </button>
+                      <div className="gp-fileHint">{fileName}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <div className="gp-label">Gráfico (opcional)</div>
-                  <div className="gp-uploadRow">
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/png,image/jpeg"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0] || null;
-                        setFile(f);
-                        setFileName(f ? f.name : "No has subido imagen");
-                      }}
-                    />
-                    <button type="button" className="gp-uploadBtn" onClick={() => fileRef.current?.click()}>
-                      📎 Cargar
-                    </button>
-                    <div className="gp-fileHint">{fileName}</div>
+                  <div className="gp-help">
+                    Si no subes imagen, el agente analiza con precio + símbolo + timeframe.
                   </div>
+
+                  <button className="gp-btnPrimary" onClick={onGenerate} disabled={loading}>
+                    ⚡ {loading ? "Generando..." : "Generar Señal"}
+                  </button>
+
+                  {error ? <div className="gp-error">{error}</div> : null}
                 </div>
-
-                <div className="gp-help">
-                  Si no subes imagen, el agente analiza con precio + símbolo + timeframe.
-                </div>
-
-                <button className="gp-btnPrimary" onClick={onGenerate} disabled={loading}>
-                  ⚡ {loading ? "Generando..." : "Generar Señal"}
-                </button>
-
-                {error ? <div className="gp-error">{error}</div> : null}
               </div>
             </div>
+
+            {flash ? (
+              <ResultCard
+                title="GoldPulse Scalp"
+                side={flash.side}
+                confidence={flash.confidence}
+                entryLabel="Entrada (precio actual)"
+                entryValue={String(flash.entry)}
+                sl={flash.sl}
+                tp1={flash.tp1}
+                tp2={flash.tp2}
+                tp3={flash.tp3}
+                thesisTitle="Impulso"
+                rationale={flash.rationale}
+              />
+            ) : (
+              <EmptyCard
+                title="GoldPulse Scalp"
+                text="Aquí aparecerá la señal rápida de scalp cuando generes el análisis."
+              />
+            )}
           </div>
-
-          {premium && (
-            <ResultCard
-              title={premium.title || "GoldPulse Premium (Institucional)"}
-              side={premium.side}
-              confidence={premium.confidence}
-              entryLabel="Entrada institucional"
-              entryValue={premium.entry}
-              sl={premium.sl}
-              tp1={premium.tp1}
-              tp2={premium.tp2}
-              tp3={premium.tp3}
-              thesisTitle="Tesis de entrada"
-              rationale={premium.rationale}
-              bias={premium.bias}
-              sections={premium.sections}
-            />
-          )}
-
-          {flash && (
-            <ResultCard
-              title="GoldPulse Scalp"
-              side={flash.side}
-              confidence={flash.confidence}
-              entryLabel="Entrada (precio actual)"
-              entryValue={String(flash.entry)}
-              sl={flash.sl}
-              tp1={flash.tp1}
-              tp2={flash.tp2}
-              tp3={flash.tp3}
-              thesisTitle="Impulso"
-              rationale={flash.rationale}
-            />
-          )}
         </div>
 
         <section className="gp-bottomNav">
@@ -550,7 +547,6 @@ export default function Analyze() {
         .gp-page {
           min-height: 100vh;
           color: #eaf3ff;
-          overflow-x: hidden;
           background:
             radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
             radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
@@ -632,7 +628,7 @@ export default function Analyze() {
           display: none;
           width: 42px;
           height: 42px;
-          border-radius: 14px;
+          border-radius: 12px;
           border: 1px solid rgba(255,255,255,0.12);
           background: rgba(255,255,255,0.05);
           color: white;
@@ -648,16 +644,16 @@ export default function Analyze() {
         }
 
         .gp-heroCard,
-        .gp-card {
+        .gp-card,
+        .gp-emptyCard {
           border-radius: 22px;
           background: rgba(0, 0, 0, 0.34);
           border: 1px solid rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(14px);
         }
 
-        .gp-heroCard,
-        .gp-card {
-          padding: 20px;
+        .gp-heroCard {
+          padding: 24px;
         }
 
         .gp-pill {
@@ -715,10 +711,15 @@ export default function Analyze() {
           font-weight: 800;
         }
 
-        .gp-mainStack {
+        .gp-grid {
           margin-top: 18px;
           display: grid;
-          gap: 18px;
+          grid-template-columns: 1.05fr 0.95fr;
+          gap: 16px;
+        }
+
+        .gp-card {
+          padding: 20px;
         }
 
         .gp-cardHeader {
@@ -817,7 +818,7 @@ export default function Analyze() {
         .gp-goldBtn,
         .gp-btnPrimary {
           padding: 12px 16px;
-          border-radius: 14px;
+          border-radius: 12px;
           cursor: pointer;
           font-weight: 800;
         }
@@ -862,33 +863,43 @@ export default function Analyze() {
           font-size: 14px;
         }
 
+        .gp-emptyCard {
+          padding: 20px;
+        }
+
+        .gp-emptyTitle {
+          font-size: 22px;
+          font-weight: 800;
+        }
+
+        .gp-emptyText {
+          margin-top: 10px;
+          color: rgba(234,243,255,0.76);
+          line-height: 1.7;
+        }
+
         .gp-badge {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 10px 16px;
-          border-radius: 999px;
+          padding: 10px 12px;
+          border-radius: 14px;
           background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(120,190,255,0.16);
+          border: 1px solid rgba(255,255,255,0.08);
           font-size: 13px;
           font-weight: 800;
-          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
         }
 
         .gp-bigConf {
           font-size: 28px;
           font-weight: 900;
-          color: #f4cd7b;
         }
 
         .gp-section {
-          border-radius: 18px;
-          padding: 16px;
-          background: linear-gradient(180deg, rgba(3,14,27,0.95), rgba(2,9,18,0.92));
-          border: 1px solid rgba(70,120,190,0.20);
-          box-shadow:
-            inset 0 0 0 1px rgba(255,255,255,0.02),
-            0 8px 22px rgba(0,0,0,0.22);
+          border-radius: 16px;
+          padding: 14px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
         }
 
         .gp-sectionTitle {
@@ -906,48 +917,39 @@ export default function Analyze() {
 
         .gp-kv {
           display: grid;
-          gap: 12px;
+          gap: 10px;
         }
 
         .gp-kvRow {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          gap: 14px;
-          padding: 16px 18px;
-          border-radius: 999px;
-          background: linear-gradient(180deg, rgba(6,17,31,0.96), rgba(3,10,20,0.96));
-          border: 1px solid rgba(62,112,184,0.24);
-          box-shadow:
-            inset 0 0 0 1px rgba(255,255,255,0.02),
-            0 10px 24px rgba(0,0,0,0.18);
+          gap: 12px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          background: rgba(0,0,0,0.24);
+          border: 1px solid rgba(255,255,255,0.06);
           flex-wrap: wrap;
         }
 
         .gp-k {
-          color: rgba(234,243,255,0.68);
-          font-size: 15px;
+          color: rgba(234,243,255,0.66);
         }
 
         .gp-v {
-          font-weight: 900;
-          font-size: 18px;
-          letter-spacing: 0.2px;
+          font-weight: 800;
         }
 
         .gp-green {
-          color: #7ef0ac;
-          text-shadow: 0 0 12px rgba(72, 255, 157, 0.10);
+          color: var(--green, #3ee089);
         }
 
         .gp-red {
-          color: #ff7d92;
-          text-shadow: 0 0 12px rgba(255, 80, 110, 0.10);
+          color: var(--red, #ff6b81);
         }
 
         .gp-sections {
           display: grid;
-          gap: 14px;
+          gap: 12px;
         }
 
         .gp-bottomNav {
@@ -1013,6 +1015,7 @@ export default function Analyze() {
           }
 
           .gp-quickStats,
+          .gp-grid,
           .gp-row2 {
             grid-template-columns: 1fr;
           }
@@ -1036,13 +1039,23 @@ export default function Analyze() {
             height: 42px;
           }
 
-          .gp-topInfo {
-            display: none;
+          .gp-topTitle {
+            font-size: 16px;
+          }
+
+          .gp-topSub {
+            font-size: 12px;
           }
 
           .gp-heroCard,
-          .gp-card {
+          .gp-card,
+          .gp-emptyCard {
             border-radius: 18px;
+          }
+
+          .gp-heroCard,
+          .gp-card,
+          .gp-emptyCard {
             padding: 18px;
           }
 
@@ -1062,27 +1075,25 @@ export default function Analyze() {
             font-size: 16px;
           }
 
-          .gp-cardTitle {
+          .gp-cardTitle,
+          .gp-emptyTitle {
             font-size: 20px;
           }
 
           .gp-tvFrame {
-            height: 320px;
-          }
-
-          .gp-kvRow {
-            padding: 15px 16px;
-          }
-
-          .gp-k {
-            font-size: 14px;
-          }
-
-          .gp-v {
-            font-size: 17px;
+            height: 360px;
           }
         }
       `}</style>
+    </div>
+  );
+}
+
+function EmptyCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="gp-emptyCard">
+      <div className="gp-emptyTitle">{title}</div>
+      <div className="gp-emptyText">{text}</div>
     </div>
   );
 }
@@ -1113,14 +1124,16 @@ function ResultCard(props: {
         </div>
 
         <div className="gp-badge">
-          <strong style={{ color: isBuy ? "#7ef0ac" : "#ff7d92" }}>{props.side}</strong>
+          <strong style={{ color: isBuy ? "var(--green, #3ee089)" : "var(--red, #ff6b81)" }}>
+            {props.side}
+          </strong>
           <span style={{ color: "rgba(234,243,255,0.68)" }}>{Math.round(props.confidence)}%</span>
         </div>
       </div>
 
       <div className="gp-cardBody">
         {props.bias?.label ? (
-          <div className="gp-section" style={{ marginBottom: 10 }}>
+          <div className="gp-section">
             <div className="gp-sectionTitle">Bias del día</div>
             <div className="gp-sectionText">
               <strong>{props.bias.label}</strong> — {props.bias.explanation}
@@ -1150,12 +1163,14 @@ function ResultCard(props: {
               <div className="gp-v gp-green">{props.tp1}</div>
             </div>
           )}
+
           {typeof props.tp2 === "number" && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 2</div>
               <div className="gp-v gp-green">{props.tp2}</div>
             </div>
           )}
+
           {typeof props.tp3 === "number" && props.tp3 !== 0 && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 3</div>
@@ -1176,12 +1191,14 @@ function ResultCard(props: {
               <div className="gp-sectionText">{props.sections.technical}</div>
             </div>
           )}
+
           {props.sections?.fundamental && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Análisis Fundamental</div>
               <div className="gp-sectionText">{props.sections.fundamental}</div>
             </div>
           )}
+
           {props.sections?.sentiment && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Sentimiento del Mercado</div>

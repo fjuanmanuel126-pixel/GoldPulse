@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import formidable, { File } from "formidable";
 import fs from "fs";
-import { createClient } from "@supabase/supabase-js";
 import { JM_SYSTEM_PROMPT } from "../../lib/jmSystemPrompt";
 
 export const config = {
@@ -100,6 +99,8 @@ type AgentOutput = {
 };
 
 const DAILY_LIMIT = 5;
+
+// memoria simple por IP y día
 const usageStore = new Map<string, number>();
 
 function getTodayKey() {
@@ -112,26 +113,19 @@ function getTodayKey() {
 
 function getClientIp(req: NextApiRequest) {
   const xfwd = req.headers["x-forwarded-for"];
-  if (typeof xfwd === "string" && xfwd.length > 0) return xfwd.split(",")[0].trim();
-  if (Array.isArray(xfwd) && xfwd.length > 0) return xfwd[0];
+  if (typeof xfwd === "string" && xfwd.length > 0) {
+    return xfwd.split(",")[0].trim();
+  }
+  if (Array.isArray(xfwd) && xfwd.length > 0) {
+    return xfwd[0];
+  }
   return req.socket.remoteAddress || "unknown";
 }
 
-function getUsageMeta(req: NextApiRequest, unlimited = false) {
+function getUsageMeta(req: NextApiRequest) {
   const ip = getClientIp(req);
   const dateKey = getTodayKey();
   const key = `${ip}:${dateKey}`;
-
-  if (unlimited) {
-    return {
-      key,
-      usedToday: 0,
-      remaining: 999999999,
-      limit: 999999999,
-      dateKey,
-    };
-  }
-
   const usedToday = usageStore.get(key) || 0;
   return {
     key,
@@ -263,39 +257,6 @@ function extractJson(text: string): AgentOutput {
   }
 }
 
-async function getUserAccessLevel(req: NextApiRequest): Promise<"free" | "premium" | "vip" | "admin" | null> {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-
-  if (!token) return null;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  });
-
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  if (userError || !userData.user) return null;
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("access_level")
-    .eq("id", userData.user.id)
-    .single();
-
-  if (profileError || !profile?.access_level) return null;
-
-  return profile.access_level;
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiSuccess | ApiError>
@@ -309,12 +270,9 @@ export default async function handler(
     return res.status(500).json({ error: "Falta OPENAI_API_KEY en variables de entorno." });
   }
 
-  const accessLevel = await getUserAccessLevel(req);
-  const isAdmin = accessLevel === "admin";
+  const usage = getUsageMeta(req);
 
-  const usage = getUsageMeta(req, isAdmin);
-
-  if (!isAdmin && usage.usedToday >= DAILY_LIMIT) {
+  if (usage.usedToday >= DAILY_LIMIT) {
     return res.status(429).json({
       error: "Has alcanzado el límite diario de señales.",
       meta: {
@@ -494,19 +452,17 @@ Reglas:
     const premium = sanitizePremium(agent);
     const momentum = sanitizeMomentum(agent, currentPrice);
 
-    if (!isAdmin) {
-      bumpUsage(usage.key);
-    }
+    bumpUsage(usage.key);
 
-    const newUsed = isAdmin ? 0 : usage.usedToday + 1;
+    const newUsed = usage.usedToday + 1;
 
     return res.status(200).json({
       premium,
       momentum,
       meta: {
         usedToday: newUsed,
-        remaining: isAdmin ? 999999999 : Math.max(0, DAILY_LIMIT - newUsed),
-        limit: isAdmin ? 999999999 : DAILY_LIMIT,
+        remaining: Math.max(0, DAILY_LIMIT - newUsed),
+        limit: DAILY_LIMIT,
         dateKey: usage.dateKey,
       },
     });
