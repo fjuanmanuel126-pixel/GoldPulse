@@ -173,13 +173,21 @@ export default function Analyze() {
 
     setLoading(true);
     try {
+      const supabase = getSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
       const fd = new FormData();
       fd.append("symbol", symbol);
       fd.append("timeframe", timeframe);
       fd.append("currentPrice", String(price));
       if (file) fd.append("image", file);
 
-      const r = await fetch("/api/analyze", { method: "POST", body: fd });
+      const r = await fetch("/api/analyze", {
+        method: "POST",
+        body: fd,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
       const text = await r.text();
       let j: any = null;
@@ -289,6 +297,13 @@ export default function Analyze() {
     );
   }
 
+  const usageText =
+    accessLevel === "admin"
+      ? "∞"
+      : meta
+      ? `${meta.usedToday}/${meta.limit}`
+      : "—";
+
   return (
     <div className="gp-page">
       <div className="gp-wrap">
@@ -356,7 +371,7 @@ export default function Analyze() {
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Uso hoy</div>
-                <div className="gp-statValueSmall">{meta ? `${meta.usedToday}/${meta.limit}` : "—"}</div>
+                <div className="gp-statValueSmall">{usageText}</div>
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Diario</div>
@@ -367,63 +382,21 @@ export default function Analyze() {
         </section>
 
         <div className="gp-grid">
-          <div style={{ display: "grid", gap: 18 }}>
-            <div className="gp-card">
-              <div className="gp-cardHeader">
-                <div>
-                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
-                  <div className="gp-cardMeta">
-                    {symbol} · {timeframe}
-                  </div>
-                </div>
-                <div className="gp-livePill">Live</div>
-              </div>
-
-              <div className="gp-chartWrap">
-                <iframe
-                  key={`${symbol}-${tvInterval}`}
-                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
-                    symbol
-                  )}&interval=${encodeURIComponent(
-                    tvInterval
-                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
-                  className="gp-tvFrame"
-                />
-              </div>
-            </div>
-
-            {premium ? (
-              <ResultCard
-                title={premium.title || "GoldPulse Premium (Institucional)"}
-                side={premium.side}
-                confidence={premium.confidence}
-                entryLabel="Entrada institucional"
-                entryValue={premium.entry}
-                sl={premium.sl}
-                tp1={premium.tp1}
-                tp2={premium.tp2}
-                tp3={premium.tp3}
-                thesisTitle="Tesis de entrada"
-                rationale={premium.rationale}
-                bias={premium.bias}
-                sections={premium.sections}
-              />
-            ) : (
-              <EmptyCard
-                title="Señal Premium"
-                text="Aquí aparecerá la señal premium institucional cuando generes el análisis."
-              />
-            )}
-          </div>
-
-          <div style={{ display: "grid", gap: 18 }}>
-            <div className="gp-card">
+          {/* COLUMNA FORM / RESULTADOS EN MÓVIL */}
+          <div className="gp-rightCol">
+            <div className="gp-card gp-formCard">
               <div className="gp-cardHeader">
                 <div>
                   <div className="gp-cardTitle">Generador de Señales IA</div>
                   <div className="gp-cardMeta">Premium + Scalp</div>
                 </div>
-                <div className="gp-cardMeta">{meta ? `${meta.remaining} restantes` : "—"}</div>
+                <div className="gp-cardMeta">
+                  {accessLevel === "admin"
+                    ? "∞ restantes"
+                    : meta
+                    ? `${meta.remaining} restantes`
+                    : "—"}
+                </div>
               </div>
 
               <div className="gp-cardBody">
@@ -500,6 +473,29 @@ export default function Analyze() {
               </div>
             </div>
 
+            {premium ? (
+              <ResultCard
+                title={premium.title || "GoldPulse Premium (Institucional)"}
+                side={premium.side}
+                confidence={premium.confidence}
+                entryLabel="Entrada institucional"
+                entryValue={premium.entry}
+                sl={premium.sl}
+                tp1={premium.tp1}
+                tp2={premium.tp2}
+                tp3={premium.tp3}
+                thesisTitle="Tesis de entrada"
+                rationale={premium.rationale}
+                bias={premium.bias}
+                sections={premium.sections}
+              />
+            ) : (
+              <EmptyCard
+                title="Señal Premium"
+                text="Aquí aparecerá la señal premium institucional cuando generes el análisis."
+              />
+            )}
+
             {flash ? (
               <ResultCard
                 title="GoldPulse Scalp"
@@ -520,6 +516,33 @@ export default function Analyze() {
                 text="Aquí aparecerá la señal rápida de scalp cuando generes el análisis."
               />
             )}
+          </div>
+
+          {/* COLUMNA GRÁFICO */}
+          <div className="gp-leftCol">
+            <div className="gp-card">
+              <div className="gp-cardHeader">
+                <div>
+                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
+                  <div className="gp-cardMeta">
+                    {symbol} · {timeframe}
+                  </div>
+                </div>
+                <div className="gp-livePill">Live</div>
+              </div>
+
+              <div className="gp-chartWrap">
+                <iframe
+                  key={`${symbol}-${tvInterval}`}
+                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
+                    symbol
+                  )}&interval=${encodeURIComponent(
+                    tvInterval
+                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
+                  className="gp-tvFrame"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -547,6 +570,7 @@ export default function Analyze() {
         .gp-page {
           min-height: 100vh;
           color: #eaf3ff;
+          overflow-x: hidden;
           background:
             radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
             radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
@@ -716,6 +740,13 @@ export default function Analyze() {
           display: grid;
           grid-template-columns: 1.05fr 0.95fr;
           gap: 16px;
+          align-items: start;
+        }
+
+        .gp-leftCol,
+        .gp-rightCol {
+          display: grid;
+          gap: 18px;
         }
 
         .gp-card {
@@ -1020,6 +1051,14 @@ export default function Analyze() {
             grid-template-columns: 1fr;
           }
 
+          .gp-rightCol {
+            order: 1;
+          }
+
+          .gp-leftCol {
+            order: 2;
+          }
+
           .gp-bottomNav {
             display: grid;
           }
@@ -1039,12 +1078,8 @@ export default function Analyze() {
             height: 42px;
           }
 
-          .gp-topTitle {
-            font-size: 16px;
-          }
-
-          .gp-topSub {
-            font-size: 12px;
+          .gp-topInfo {
+            display: none;
           }
 
           .gp-heroCard,
@@ -1082,6 +1117,10 @@ export default function Analyze() {
 
           .gp-tvFrame {
             height: 360px;
+          }
+
+          .gp-formCard {
+            margin-top: 0;
           }
         }
       `}</style>

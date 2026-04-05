@@ -1,8 +1,15 @@
-// pages/_app.tsx
 import type { AppProps } from "next/app";
+import Head from "next/head";
 import "../styles/globals.css";
-import "../styles/branding/theme.css";
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <>
+      <Head>
+        <title>GoldPulse Pro</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+      </Head>
+      <Component {...pageProps} />
+    </>
+  );
 }

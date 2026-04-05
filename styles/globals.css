@@ -1,11 +1,54 @@
-/* styles/globals.css */
+html,
+body,
+#__next {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  background: #02060c;
+}
 
 * {
   box-sizing: border-box;
 }
 
-html,
-body {
-  padding: 0;
-  margin: 0;
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:root {
+  --bg0: #02060c;
+  --bg1: #07111c;
+  --card: rgba(0, 0, 0, 0.34);
+  --line: rgba(255, 255, 255, 0.08);
+  --muted: rgba(234, 243, 255, 0.72);
+  --text: #eaf3ff;
+  --gold: rgba(255, 210, 120, 0.96);
+  --green: #3ee089;
+  --red: #ff6b81;
 }
