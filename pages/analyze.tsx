@@ -61,6 +61,7 @@ type JournalItem = {
 };
 
 type AccessLevel = "free" | "premium" | "vip" | "admin";
+type SignalVariant = "premium" | "flash";
 
 const JOURNAL_KEY = "goldpulse_journal_v1";
 
@@ -409,6 +410,7 @@ export default function Analyze() {
 
             {premium && (
               <ResultCard
+                variant="premium"
                 title={premium.title || "GoldPulse Premium (Institucional)"}
                 side={premium.side}
                 confidence={premium.confidence}
@@ -518,6 +520,7 @@ export default function Analyze() {
 
             {flash && (
               <ResultCard
+                variant="flash"
                 title="GoldPulse Scalp"
                 side={flash.side}
                 confidence={flash.confidence}
@@ -739,6 +742,9 @@ export default function Analyze() {
 
         .gp-card {
           padding: 20px;
+          box-shadow:
+            0 18px 60px rgba(0, 0, 0, 0.28),
+            inset 0 1px 0 rgba(255,255,255,0.03);
         }
 
         .gp-cardHeader {
@@ -840,6 +846,14 @@ export default function Analyze() {
           border-radius: 12px;
           cursor: pointer;
           font-weight: 800;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+
+        .gp-uploadBtn:hover,
+        .gp-softBtn:hover,
+        .gp-goldBtn:hover,
+        .gp-btnPrimary:hover {
+          transform: translateY(-1px);
         }
 
         .gp-softBtn,
@@ -857,8 +871,17 @@ export default function Analyze() {
 
         .gp-btnPrimary {
           border: 1px solid rgba(120,190,255,0.35);
-          background: linear-gradient(180deg, rgba(60,160,255,0.30), rgba(0,0,0,0.18));
-          color: white;
+          background: linear-gradient(90deg, rgba(255, 204, 107, 0.95), rgba(73, 194, 255, 0.95));
+          color: #08131f;
+          box-shadow:
+            0 10px 30px rgba(73, 194, 255, 0.16),
+            0 8px 24px rgba(255, 204, 107, 0.16);
+        }
+
+        .gp-btnPrimary:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none;
         }
 
         .gp-fileHint {
@@ -882,27 +905,12 @@ export default function Analyze() {
           font-size: 14px;
         }
 
-        .gp-emptyCard {
-          padding: 20px;
-        }
-
-        .gp-emptyTitle {
-          font-size: 22px;
-          font-weight: 800;
-        }
-
-        .gp-emptyText {
-          margin-top: 10px;
-          color: rgba(234,243,255,0.76);
-          line-height: 1.7;
-        }
-
         .gp-badge {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 10px 12px;
-          border-radius: 14px;
+          padding: 10px 14px;
+          border-radius: 999px;
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.08);
           font-size: 13px;
@@ -915,8 +923,8 @@ export default function Analyze() {
         }
 
         .gp-section {
-          border-radius: 16px;
-          padding: 14px;
+          border-radius: 18px;
+          padding: 16px;
           background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.07);
         }
@@ -925,6 +933,8 @@ export default function Analyze() {
           font-size: 14px;
           font-weight: 800;
           color: rgba(255,220,160,0.92);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
         }
 
         .gp-sectionText {
@@ -932,30 +942,6 @@ export default function Analyze() {
           color: rgba(234,243,255,0.78);
           line-height: 1.7;
           font-size: 14px;
-        }
-
-        .gp-kv {
-          display: grid;
-          gap: 10px;
-        }
-
-        .gp-kvRow {
-          display: flex;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 12px 14px;
-          border-radius: 14px;
-          background: rgba(0,0,0,0.24);
-          border: 1px solid rgba(255,255,255,0.06);
-          flex-wrap: wrap;
-        }
-
-        .gp-k {
-          color: rgba(234,243,255,0.66);
-        }
-
-        .gp-v {
-          font-weight: 800;
         }
 
         .gp-green {
@@ -969,6 +955,225 @@ export default function Analyze() {
         .gp-sections {
           display: grid;
           gap: 12px;
+        }
+
+        .gp-signalCard {
+          position: relative;
+          overflow: hidden;
+          animation: gpSignalFade 0.34s ease;
+        }
+
+        .gp-signalPremium {
+          background:
+            radial-gradient(500px 220px at top right, rgba(255, 210, 120, 0.08), transparent 60%),
+            radial-gradient(500px 220px at top left, rgba(90, 185, 255, 0.08), transparent 60%),
+            rgba(0, 0, 0, 0.36);
+        }
+
+        .gp-signalFlash {
+          background:
+            radial-gradient(420px 180px at top right, rgba(73, 194, 255, 0.12), transparent 60%),
+            rgba(0, 0, 0, 0.36);
+        }
+
+        .gp-signalTopRow {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .gp-sideBadge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 14px;
+          border-radius: 999px;
+          font-size: 13px;
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .gp-sideBadgeBuy {
+          color: #8df2d1;
+          background: rgba(62, 224, 137, 0.12);
+          border: 1px solid rgba(62, 224, 137, 0.26);
+          box-shadow: 0 0 18px rgba(62, 224, 137, 0.1);
+        }
+
+        .gp-sideBadgeSell {
+          color: #ffb1bc;
+          background: rgba(255, 107, 129, 0.12);
+          border: 1px solid rgba(255, 107, 129, 0.26);
+          box-shadow: 0 0 18px rgba(255, 107, 129, 0.1);
+        }
+
+        .gp-sideDot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: currentColor;
+        }
+
+        .gp-copyBtn {
+          border: 1px solid rgba(255,255,255,0.10);
+          background: rgba(255,255,255,0.05);
+          color: white;
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: transform 0.18s ease, background 0.18s ease;
+        }
+
+        .gp-copyBtn:hover {
+          transform: translateY(-1px);
+          background: rgba(255,255,255,0.08);
+        }
+
+        .gp-biasCard {
+          border-radius: 18px;
+          padding: 16px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .gp-biasLabel {
+          margin-top: 8px;
+          font-size: 16px;
+          font-weight: 900;
+          color: #ffffff;
+        }
+
+        .gp-biasText {
+          margin-top: 8px;
+          color: rgba(234,243,255,0.78);
+          line-height: 1.65;
+          font-size: 14px;
+        }
+
+        .gp-entrySlGrid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .gp-mainStat {
+          padding: 16px;
+          border-radius: 18px;
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.07);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .gp-mainStatLabel {
+          color: rgba(234,243,255,0.68);
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+
+        .gp-mainStatValue {
+          margin-top: 8px;
+          font-size: 26px;
+          font-weight: 900;
+          color: #ffffff;
+          line-height: 1.1;
+          word-break: break-word;
+        }
+
+        .gp-mainStatEntry {
+          border: 1px solid rgba(73, 194, 255, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.03),
+            0 10px 24px rgba(73, 194, 255, 0.08);
+        }
+
+        .gp-mainStatSl {
+          border: 1px solid rgba(255, 107, 129, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.03),
+            0 10px 24px rgba(255, 107, 129, 0.08);
+        }
+
+        .gp-tpWrap {
+          display: grid;
+          gap: 12px;
+        }
+
+        .gp-tpTitle {
+          margin: 0;
+          font-size: 13px;
+          font-weight: 800;
+          color: rgba(234,243,255,0.82);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+
+        .gp-tpGrid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        .gp-tpBtn {
+          position: relative;
+          overflow: hidden;
+          min-height: 92px;
+          padding: 14px;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.04);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          text-align: left;
+          box-shadow:
+            0 14px 32px rgba(0,0,0,0.18),
+            inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .gp-tpBtn span {
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          opacity: 0.9;
+        }
+
+        .gp-tpBtn strong {
+          font-size: 24px;
+          line-height: 1.1;
+          font-weight: 900;
+        }
+
+        .gp-tp1 {
+          color: #7ed8ff;
+          background: linear-gradient(180deg, rgba(26, 49, 80, 0.95), rgba(11, 22, 40, 0.96));
+          border-color: rgba(92, 191, 255, 0.24);
+          box-shadow:
+            0 14px 32px rgba(55, 148, 255, 0.14),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .gp-tp2 {
+          color: #86f1ce;
+          background: linear-gradient(180deg, rgba(18, 63, 54, 0.95), rgba(9, 31, 26, 0.96));
+          border-color: rgba(62, 224, 137, 0.24);
+          box-shadow:
+            0 14px 32px rgba(62, 224, 137, 0.12),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .gp-tp3 {
+          color: #ffd87d;
+          background: linear-gradient(180deg, rgba(74, 57, 19, 0.95), rgba(34, 24, 7, 0.96));
+          border-color: rgba(255, 204, 107, 0.24);
+          box-shadow:
+            0 14px 32px rgba(255, 204, 107, 0.12),
+            inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .gp-bottomNav {
@@ -1000,6 +1205,17 @@ export default function Analyze() {
           background: rgba(255,255,255,0.04);
           color: white;
           font-size: 12px;
+        }
+
+        @keyframes gpSignalFade {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         @media (max-width: 980px) {
@@ -1035,7 +1251,9 @@ export default function Analyze() {
 
           .gp-quickStats,
           .gp-grid,
-          .gp-row2 {
+          .gp-row2,
+          .gp-entrySlGrid,
+          .gp-tpGrid {
             grid-template-columns: 1fr;
           }
 
@@ -1063,14 +1281,8 @@ export default function Analyze() {
           }
 
           .gp-heroCard,
-          .gp-card,
-          .gp-emptyCard {
+          .gp-card {
             border-radius: 18px;
-          }
-
-          .gp-heroCard,
-          .gp-card,
-          .gp-emptyCard {
             padding: 18px;
           }
 
@@ -1090,13 +1302,36 @@ export default function Analyze() {
             font-size: 16px;
           }
 
-          .gp-cardTitle,
-          .gp-emptyTitle {
+          .gp-cardTitle {
             font-size: 20px;
           }
 
           .gp-tvFrame {
             height: 360px;
+          }
+
+          .gp-mainStatValue {
+            font-size: 22px;
+          }
+
+          .gp-tpBtn {
+            min-height: 78px;
+          }
+
+          .gp-tpBtn strong {
+            font-size: 20px;
+          }
+
+          .gp-bigConf {
+            font-size: 24px;
+          }
+
+          .gp-copyBtn {
+            width: 100%;
+          }
+
+          .gp-signalTopRow {
+            align-items: stretch;
           }
         }
       `}</style>
@@ -1105,6 +1340,7 @@ export default function Analyze() {
 }
 
 function ResultCard(props: {
+  variant: SignalVariant;
   title: string;
   side: "BUY" | "SELL";
   confidence: number;
@@ -1120,68 +1356,105 @@ function ResultCard(props: {
   sections?: { technical?: string; fundamental?: string; sentiment?: string };
 }) {
   const isBuy = props.side === "BUY";
+  const variantClass = props.variant === "premium" ? "gp-signalPremium" : "gp-signalFlash";
+
+  async function handleCopy() {
+    const text = [
+      `${props.title}`,
+      `Side: ${props.side}`,
+      `${props.entryLabel}: ${props.entryValue}`,
+      `SL: ${props.sl}`,
+      typeof props.tp1 === "number" ? `TP1: ${props.tp1}` : "",
+      typeof props.tp2 === "number" ? `TP2: ${props.tp2}` : "",
+      typeof props.tp3 === "number" && props.tp3 !== 0 ? `TP3: ${props.tp3}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Niveles copiados");
+    } catch {
+      alert("No se pudo copiar");
+    }
+  }
 
   return (
-    <div className="gp-card">
+    <div className={`gp-card gp-signalCard ${variantClass}`}>
       <div className="gp-cardHeader">
         <div>
           <div className="gp-cardTitle">{props.title}</div>
-          <div className="gp-cardMeta">Señal única · Alta probabilidad</div>
+          <div className="gp-cardMeta">
+            {props.variant === "premium" ? "Señal institucional · Alta probabilidad" : "Señal Flash · Ejecución rápida"}
+          </div>
         </div>
 
-        <div className="gp-badge">
-          <strong style={{ color: isBuy ? "var(--green, #3ee089)" : "var(--red, #ff6b81)" }}>
-            {props.side}
-          </strong>
-          <span style={{ color: "rgba(234,243,255,0.68)" }}>{Math.round(props.confidence)}%</span>
+        <div className={`gp-sideBadge ${isBuy ? "gp-sideBadgeBuy" : "gp-sideBadgeSell"}`}>
+          <span className="gp-sideDot" />
+          {props.side}
         </div>
       </div>
 
       <div className="gp-cardBody">
+        <div className="gp-signalTopRow">
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flex: 1 }}>
+            <div className="gp-cardMeta">Confianza</div>
+            <div className="gp-bigConf">{Math.round(props.confidence)}%</div>
+          </div>
+
+          <button type="button" className="gp-copyBtn" onClick={handleCopy}>
+            Copiar niveles
+          </button>
+        </div>
+
         {props.bias?.label ? (
-          <div className="gp-section" style={{ marginBottom: 10 }}>
+          <div className="gp-biasCard">
             <div className="gp-sectionTitle">Bias del día</div>
-            <div className="gp-sectionText">
-              <strong>{props.bias.label}</strong> — {props.bias.explanation}
-            </div>
+            <div className="gp-biasLabel">{props.bias.label}</div>
+            <div className="gp-biasText">{props.bias.explanation}</div>
           </div>
         ) : null}
 
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-          <div className="gp-cardMeta">Confianza</div>
-          <div className="gp-bigConf">{Math.round(props.confidence)}%</div>
-        </div>
-
-        <div className="gp-kv">
-          <div className="gp-kvRow">
-            <div className="gp-k">{props.entryLabel}</div>
-            <div className="gp-v">{props.entryValue}</div>
+        <div className="gp-entrySlGrid">
+          <div className="gp-mainStat gp-mainStatEntry">
+            <div className="gp-mainStatLabel">{props.entryLabel}</div>
+            <div className="gp-mainStatValue">{props.entryValue}</div>
           </div>
 
-          <div className="gp-kvRow">
-            <div className="gp-k">Stop Loss</div>
-            <div className="gp-v gp-red">{props.sl}</div>
+          <div className="gp-mainStat gp-mainStatSl">
+            <div className="gp-mainStatLabel">Stop Loss</div>
+            <div className="gp-mainStatValue gp-red">{props.sl}</div>
           </div>
-
-          {typeof props.tp1 === "number" && (
-            <div className="gp-kvRow">
-              <div className="gp-k">Take Profit 1</div>
-              <div className="gp-v gp-green">{props.tp1}</div>
-            </div>
-          )}
-          {typeof props.tp2 === "number" && (
-            <div className="gp-kvRow">
-              <div className="gp-k">Take Profit 2</div>
-              <div className="gp-v gp-green">{props.tp2}</div>
-            </div>
-          )}
-          {typeof props.tp3 === "number" && props.tp3 !== 0 && (
-            <div className="gp-kvRow">
-              <div className="gp-k">Take Profit 3</div>
-              <div className="gp-v gp-green">{props.tp3}</div>
-            </div>
-          )}
         </div>
+
+        {(typeof props.tp1 === "number" || typeof props.tp2 === "number" || typeof props.tp3 === "number") && (
+          <div className="gp-tpWrap">
+            <div className="gp-tpTitle">Take Profits</div>
+
+            <div className="gp-tpGrid">
+              {typeof props.tp1 === "number" && (
+                <div className="gp-tpBtn gp-tp1">
+                  <span>TP1</span>
+                  <strong>{props.tp1}</strong>
+                </div>
+              )}
+
+              {typeof props.tp2 === "number" && (
+                <div className="gp-tpBtn gp-tp2">
+                  <span>TP2</span>
+                  <strong>{props.tp2}</strong>
+                </div>
+              )}
+
+              {typeof props.tp3 === "number" && props.tp3 !== 0 && (
+                <div className="gp-tpBtn gp-tp3">
+                  <span>TP3</span>
+                  <strong>{props.tp3}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="gp-sections">
           <div className="gp-section">
