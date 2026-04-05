@@ -1,0 +1,480 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import formidable, { File } from "formidable";
+import fs from "fs";
+import { JM_SYSTEM_PROMPT } from "../../lib/jmSystemPrompt";
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+type PremiumSignal = {
+  title: string;
+  side: "BUY" | "SELL";
+  confidence: number;
+  entry: string;
+  sl: number;
+  tp1?: number;
+  tp2?: number;
+  tp3?: number;
+  rationale: string;
+  sections?: {
+    technical?: string;
+    fundamental?: string;
+    sentiment?: string;
+  };
+  bias?: {
+    label: string;
+    explanation: string;
+  };
+};
+
+type FlashSignal = {
+  title: string;
+  side: "BUY" | "SELL";
+  confidence: number;
+  entry: number;
+  sl: number;
+  tp1: number;
+  tp2: number;
+  tp3: number;
+  rationale: string;
+};
+
+type ApiSuccess = {
+  premium: PremiumSignal | null;
+  momentum: FlashSignal | null;
+  meta: {
+    usedToday: number;
+    remaining: number;
+    limit: number;
+    dateKey: string;
+  };
+};
+
+type ApiError = {
+  error: string;
+  meta?: {
+    usedToday: number;
+    remaining: number;
+    limit: number;
+    dateKey: string;
+  };
+};
+
+type AgentOutput = {
+  premium?: {
+    title?: string;
+    side?: "BUY" | "SELL" | string;
+    confidence?: number;
+    entry?: string | number;
+    sl?: number;
+    tp1?: number;
+    tp2?: number;
+    tp3?: number;
+    rationale?: string;
+    sections?: {
+      technical?: string;
+      fundamental?: string;
+      sentiment?: string;
+    };
+    bias?: {
+      label?: string;
+      explanation?: string;
+    };
+  };
+  momentum?: {
+    title?: string;
+    side?: "BUY" | "SELL" | string;
+    confidence?: number;
+    entry?: number;
+    sl?: number;
+    tp1?: number;
+    tp2?: number;
+    tp3?: number;
+    rationale?: string;
+  };
+  bias?: string;
+};
+
+const DAILY_LIMIT = 5;
+
+// memoria simple por IP y día
+const usageStore = new Map<string, number>();
+
+function getTodayKey() {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function getClientIp(req: NextApiRequest) {
+  const xfwd = req.headers["x-forwarded-for"];
+  if (typeof xfwd === "string" && xfwd.length > 0) {
+    return xfwd.split(",")[0].trim();
+  }
+  if (Array.isArray(xfwd) && xfwd.length > 0) {
+    return xfwd[0];
+  }
+  return req.socket.remoteAddress || "unknown";
+}
+
+function getUsageMeta(req: NextApiRequest) {
+  const ip = getClientIp(req);
+  const dateKey = getTodayKey();
+  const key = `${ip}:${dateKey}`;
+  const usedToday = usageStore.get(key) || 0;
+  return {
+    key,
+    usedToday,
+    remaining: Math.max(0, DAILY_LIMIT - usedToday),
+    limit: DAILY_LIMIT,
+    dateKey,
+  };
+}
+
+function bumpUsage(key: string) {
+  const current = usageStore.get(key) || 0;
+  usageStore.set(key, current + 1);
+}
+
+function parseForm(req: NextApiRequest): Promise<{ fields: formidable.Fields; files: formidable.Files }> {
+  const form = formidable({
+    multiples: false,
+    keepExtensions: true,
+    maxFileSize: 8 * 1024 * 1024,
+  });
+
+  return new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      else resolve({ fields, files });
+    });
+  });
+}
+
+function firstField(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
+function firstFile(value: File | File[] | undefined): File | null {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function fileToDataUrl(file: File): string {
+  const mime = file.mimetype || "image/jpeg";
+  const buffer = fs.readFileSync(file.filepath);
+  return `data:${mime};base64,${buffer.toString("base64")}`;
+}
+
+function num(value: unknown, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeSide(side: unknown): "BUY" | "SELL" {
+  const s = String(side || "").toUpperCase();
+  return s === "SELL" ? "SELL" : "BUY";
+}
+
+function buildBiasLabel(agent: AgentOutput) {
+  const rawBias = agent?.premium?.bias?.label || agent?.bias || "";
+  const bias = String(rawBias ?? "");
+  const b = bias.toLowerCase();
+
+  if (b.includes("bull")) return "ALCISTA";
+  if (b.includes("bear")) return "BAJISTA";
+  if (b.includes("neutral")) return "NEUTRO";
+
+  return bias ? bias.toUpperCase() : "NEUTRO";
+}
+
+function buildBiasExplanation(agent: AgentOutput) {
+  const text = String(agent?.premium?.bias?.explanation || "").trim();
+  return text || "Bias generado por el análisis actual del mercado.";
+}
+
+function sanitizePremium(agent: AgentOutput): PremiumSignal | null {
+  if (!agent?.premium) return null;
+
+  return {
+    title: String(agent.premium.title || "GoldPulse Premium (Institucional)"),
+    side: normalizeSide(agent.premium.side),
+    confidence: num(agent.premium.confidence, 70),
+    entry: String(agent.premium.entry ?? ""),
+    sl: num(agent.premium.sl, 0),
+    tp1: agent.premium.tp1 != null ? num(agent.premium.tp1) : undefined,
+    tp2: agent.premium.tp2 != null ? num(agent.premium.tp2) : undefined,
+    tp3: agent.premium.tp3 != null ? num(agent.premium.tp3) : undefined,
+    rationale: String(agent.premium.rationale || "Sin explicación."),
+    sections: {
+      technical: agent.premium.sections?.technical ? String(agent.premium.sections.technical) : undefined,
+      fundamental: agent.premium.sections?.fundamental ? String(agent.premium.sections.fundamental) : undefined,
+      sentiment: agent.premium.sections?.sentiment ? String(agent.premium.sections.sentiment) : undefined,
+    },
+    bias: {
+      label: buildBiasLabel(agent),
+      explanation: buildBiasExplanation(agent),
+    },
+  };
+}
+
+function sanitizeMomentum(agent: AgentOutput, currentPrice: number): FlashSignal | null {
+  if (!agent?.momentum) return null;
+
+  return {
+    title: String(agent.momentum.title || "GoldPulse Scalp"),
+    side: normalizeSide(agent.momentum.side),
+    confidence: num(agent.momentum.confidence, 65),
+    entry: num(agent.momentum.entry, currentPrice),
+    sl: num(agent.momentum.sl, 0),
+    tp1: num(agent.momentum.tp1, 0),
+    tp2: num(agent.momentum.tp2, 0),
+    tp3: num(agent.momentum.tp3, 0),
+    rationale: String(agent.momentum.rationale || "Sin explicación."),
+  };
+}
+
+function extractJson(text: string): AgentOutput {
+  const trimmed = text.trim();
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const maybe = trimmed.slice(start, end + 1);
+      return JSON.parse(maybe);
+    }
+    throw new Error("No se pudo extraer JSON de la respuesta del modelo.");
+  }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ApiSuccess | ApiError>
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido" });
+  }
+
+  const envKey = process.env.OPENAI_API_KEY;
+  if (!envKey) {
+    return res.status(500).json({ error: "Falta OPENAI_API_KEY en variables de entorno." });
+  }
+
+  const usage = getUsageMeta(req);
+
+  if (usage.usedToday >= DAILY_LIMIT) {
+    return res.status(429).json({
+      error: "Has alcanzado el límite diario de señales.",
+      meta: {
+        usedToday: usage.usedToday,
+        remaining: usage.remaining,
+        limit: usage.limit,
+        dateKey: usage.dateKey,
+      },
+    });
+  }
+
+  try {
+    const { fields, files } = await parseForm(req);
+
+    const symbol = String(firstField(fields.symbol) || "XAUUSD");
+    const timeframe = String(firstField(fields.timeframe) || "15m");
+    const currentPrice = Number(firstField(fields.currentPrice) || 0);
+
+    if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
+      return res.status(400).json({
+        error: "Precio actual inválido.",
+        meta: {
+          usedToday: usage.usedToday,
+          remaining: usage.remaining,
+          limit: usage.limit,
+          dateKey: usage.dateKey,
+        },
+      });
+    }
+
+    const image = firstFile(files.image as File | File[] | undefined);
+    const imageDataUrl = image ? fileToDataUrl(image) : null;
+
+    const userPrompt = `
+Analiza este activo y devuelve SOLO JSON válido.
+
+Datos:
+- symbol: ${symbol}
+- timeframe: ${timeframe}
+- currentPrice: ${currentPrice}
+
+Necesito exactamente esta estructura:
+
+{
+  "premium": {
+    "title": "GoldPulse Premium (Institucional)",
+    "side": "BUY o SELL",
+    "confidence": 0,
+    "entry": "texto o rango de entrada",
+    "sl": 0,
+    "tp1": 0,
+    "tp2": 0,
+    "tp3": 0,
+    "rationale": "explicación principal",
+    "sections": {
+      "technical": "texto",
+      "fundamental": "texto",
+      "sentiment": "texto"
+    },
+    "bias": {
+      "label": "bullish / bearish / neutral",
+      "explanation": "explicación breve"
+    }
+  },
+  "momentum": {
+    "title": "GoldPulse Scalp",
+    "side": "BUY o SELL",
+    "confidence": 0,
+    "entry": ${currentPrice},
+    "sl": 0,
+    "tp1": 0,
+    "tp2": 0,
+    "tp3": 0,
+    "rationale": "explicación"
+  }
+}
+
+Reglas:
+- Responde solo con JSON.
+- premium y momentum deben existir siempre.
+- side solo puede ser BUY o SELL.
+- confidence entre 1 y 100.
+- Para el scalp, usa una estructura rápida y coherente con el currentPrice.
+- No incluyas markdown.
+`;
+
+    const inputContent: any[] = [
+      {
+        type: "input_text",
+        text: userPrompt,
+      },
+    ];
+
+    if (imageDataUrl) {
+      inputContent.push({
+        type: "input_image",
+        image_url: imageDataUrl,
+      });
+    }
+
+    const payload = {
+      model: "gpt-4o-mini",
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: JM_SYSTEM_PROMPT,
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: inputContent,
+        },
+      ],
+    };
+
+    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${envKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const raw = await openaiRes.text();
+
+    if (!openaiRes.ok) {
+      return res.status(500).json({
+        error: `Error OpenAI: ${raw}`,
+        meta: {
+          usedToday: usage.usedToday,
+          remaining: usage.remaining,
+          limit: usage.limit,
+          dateKey: usage.dateKey,
+        },
+      });
+    }
+
+    let parsedOpenAI: any;
+    try {
+      parsedOpenAI = JSON.parse(raw);
+    } catch {
+      return res.status(500).json({
+        error: "La respuesta de OpenAI no fue JSON válido.",
+        meta: {
+          usedToday: usage.usedToday,
+          remaining: usage.remaining,
+          limit: usage.limit,
+          dateKey: usage.dateKey,
+        },
+      });
+    }
+
+    const outputText =
+      parsedOpenAI?.output_text ||
+      parsedOpenAI?.output?.map((x: any) => x?.content?.map((c: any) => c?.text).join(" ")).join(" ") ||
+      "";
+
+    if (!outputText) {
+      return res.status(500).json({
+        error: "OpenAI no devolvió texto utilizable.",
+        meta: {
+          usedToday: usage.usedToday,
+          remaining: usage.remaining,
+          limit: usage.limit,
+          dateKey: usage.dateKey,
+        },
+      });
+    }
+
+    const agent = extractJson(outputText);
+
+    const premium = sanitizePremium(agent);
+    const momentum = sanitizeMomentum(agent, currentPrice);
+
+    bumpUsage(usage.key);
+
+    const newUsed = usage.usedToday + 1;
+
+    return res.status(200).json({
+      premium,
+      momentum,
+      meta: {
+        usedToday: newUsed,
+        remaining: Math.max(0, DAILY_LIMIT - newUsed),
+        limit: DAILY_LIMIT,
+        dateKey: usage.dateKey,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: err?.message || "Error interno en /api/analyze",
+      meta: {
+        usedToday: usage.usedToday,
+        remaining: usage.remaining,
+        limit: usage.limit,
+        dateKey: usage.dateKey,
+      },
+    });
+  }
+}
