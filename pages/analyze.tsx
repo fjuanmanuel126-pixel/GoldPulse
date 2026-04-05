@@ -381,157 +381,154 @@ export default function Analyze() {
           </div>
         </section>
 
-        <div className="gp-grid">
-          <div className="gp-leftCol">
-            <div className="gp-card">
-              <div className="gp-cardHeader">
-                <div>
-                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
-                  <div className="gp-cardMeta">
-                    {symbol} · {timeframe}
-                  </div>
+        {/* GRÁFICO ARRIBA DE TODO */}
+        <div className="gp-mainStack">
+          <div className="gp-card">
+            <div className="gp-cardHeader">
+              <div>
+                <div className="gp-cardTitle">TradingView (Vista comercial)</div>
+                <div className="gp-cardMeta">
+                  {symbol} · {timeframe}
                 </div>
-                <div className="gp-livePill">Live</div>
               </div>
+              <div className="gp-livePill">Live</div>
+            </div>
 
-              <div className="gp-chartWrap">
-                <iframe
-                  key={`${symbol}-${tvInterval}`}
-                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
-                    symbol
-                  )}&interval=${encodeURIComponent(
-                    tvInterval
-                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
-                  className="gp-tvFrame"
-                />
+            <div className="gp-chartWrap">
+              <iframe
+                key={`${symbol}-${tvInterval}`}
+                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
+                  symbol
+                )}&interval=${encodeURIComponent(
+                  tvInterval
+                )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
+                className="gp-tvFrame"
+              />
+            </div>
+          </div>
+
+          <div className="gp-card">
+            <div className="gp-cardHeader">
+              <div>
+                <div className="gp-cardTitle">Generador de Señales IA</div>
+                <div className="gp-cardMeta">Premium + Scalp</div>
+              </div>
+              <div className="gp-cardMeta">
+                {accessLevel === "admin"
+                  ? "∞ restantes"
+                  : meta
+                  ? `${meta.remaining} restantes`
+                  : "—"}
               </div>
             </div>
 
-            {premium && (
-              <ResultCard
-                title={premium.title || "GoldPulse Premium (Institucional)"}
-                side={premium.side}
-                confidence={premium.confidence}
-                entryLabel="Entrada institucional"
-                entryValue={premium.entry}
-                sl={premium.sl}
-                tp1={premium.tp1}
-                tp2={premium.tp2}
-                tp3={premium.tp3}
-                thesisTitle="Tesis de entrada"
-                rationale={premium.rationale}
-                bias={premium.bias}
-                sections={premium.sections}
-              />
-            )}
-          </div>
-
-          <div className="gp-rightCol">
-            <div className="gp-card">
-              <div className="gp-cardHeader">
+            <div className="gp-cardBody">
+              <div className="gp-form">
                 <div>
-                  <div className="gp-cardTitle">Generador de Señales IA</div>
-                  <div className="gp-cardMeta">Premium + Scalp</div>
+                  <div className="gp-label">Símbolo</div>
+                  <select className="gp-select" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
+                    {SYMBOLS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="gp-cardMeta">
-                  {accessLevel === "admin"
-                    ? "∞ restantes"
-                    : meta
-                    ? `${meta.remaining} restantes`
-                    : "—"}
-                </div>
-              </div>
 
-              <div className="gp-cardBody">
-                <div className="gp-form">
+                <div className="gp-row2">
                   <div>
-                    <div className="gp-label">Símbolo</div>
-                    <select className="gp-select" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-                      {SYMBOLS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
+                    <div className="gp-label">Periodo de tiempo</div>
+                    <select
+                      className="gp-select"
+                      value={timeframe}
+                      onChange={(e) => setTimeframe(e.target.value as any)}
+                    >
+                      {TIMEFRAMES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="gp-row2">
-                    <div>
-                      <div className="gp-label">Periodo de tiempo</div>
-                      <select
-                        className="gp-select"
-                        value={timeframe}
-                        onChange={(e) => setTimeframe(e.target.value as any)}
-                      >
-                        {TIMEFRAMES.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="gp-label">Precio actual</div>
-                      <input
-                        className="gp-input"
-                        placeholder="Ej: 5076.91"
-                        value={currentPrice}
-                        onChange={(e) => setCurrentPrice(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
                   <div>
-                    <div className="gp-label">Gráfico (opcional)</div>
-                    <div className="gp-uploadRow">
-                      <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/png,image/jpeg"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] || null;
-                          setFile(f);
-                          setFileName(f ? f.name : "No has subido imagen");
-                        }}
-                      />
-                      <button type="button" className="gp-uploadBtn" onClick={() => fileRef.current?.click()}>
-                        📎 Cargar
-                      </button>
-                      <div className="gp-fileHint">{fileName}</div>
-                    </div>
+                    <div className="gp-label">Precio actual</div>
+                    <input
+                      className="gp-input"
+                      placeholder="Ej: 5076.91"
+                      value={currentPrice}
+                      onChange={(e) => setCurrentPrice(e.target.value)}
+                    />
                   </div>
-
-                  <div className="gp-help">
-                    Si no subes imagen, el agente analiza con precio + símbolo + timeframe.
-                  </div>
-
-                  <button className="gp-btnPrimary" onClick={onGenerate} disabled={loading}>
-                    ⚡ {loading ? "Generando..." : "Generar Señal"}
-                  </button>
-
-                  {error ? <div className="gp-error">{error}</div> : null}
                 </div>
+
+                <div>
+                  <div className="gp-label">Gráfico (opcional)</div>
+                  <div className="gp-uploadRow">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setFile(f);
+                        setFileName(f ? f.name : "No has subido imagen");
+                      }}
+                    />
+                    <button type="button" className="gp-uploadBtn" onClick={() => fileRef.current?.click()}>
+                      📎 Cargar
+                    </button>
+                    <div className="gp-fileHint">{fileName}</div>
+                  </div>
+                </div>
+
+                <div className="gp-help">
+                  Si no subes imagen, el agente analiza con precio + símbolo + timeframe.
+                </div>
+
+                <button className="gp-btnPrimary" onClick={onGenerate} disabled={loading}>
+                  ⚡ {loading ? "Generando..." : "Generar Señal"}
+                </button>
+
+                {error ? <div className="gp-error">{error}</div> : null}
               </div>
             </div>
-
-            {flash && (
-              <ResultCard
-                title="GoldPulse Scalp"
-                side={flash.side}
-                confidence={flash.confidence}
-                entryLabel="Entrada (precio actual)"
-                entryValue={String(flash.entry)}
-                sl={flash.sl}
-                tp1={flash.tp1}
-                tp2={flash.tp2}
-                tp3={flash.tp3}
-                thesisTitle="Impulso"
-                rationale={flash.rationale}
-              />
-            )}
           </div>
+
+          {premium && (
+            <ResultCard
+              title={premium.title || "GoldPulse Premium (Institucional)"}
+              side={premium.side}
+              confidence={premium.confidence}
+              entryLabel="Entrada institucional"
+              entryValue={premium.entry}
+              sl={premium.sl}
+              tp1={premium.tp1}
+              tp2={premium.tp2}
+              tp3={premium.tp3}
+              thesisTitle="Tesis de entrada"
+              rationale={premium.rationale}
+              bias={premium.bias}
+              sections={premium.sections}
+            />
+          )}
+
+          {flash && (
+            <ResultCard
+              title="GoldPulse Scalp"
+              side={flash.side}
+              confidence={flash.confidence}
+              entryLabel="Entrada (precio actual)"
+              entryValue={String(flash.entry)}
+              sl={flash.sl}
+              tp1={flash.tp1}
+              tp2={flash.tp2}
+              tp3={flash.tp3}
+              thesisTitle="Impulso"
+              rationale={flash.rationale}
+            />
+          )}
         </div>
 
         <section className="gp-bottomNav">
@@ -656,16 +653,16 @@ export default function Analyze() {
         }
 
         .gp-heroCard,
-        .gp-card,
-        .gp-emptyCard {
+        .gp-card {
           border-radius: 22px;
           background: rgba(0, 0, 0, 0.34);
           border: 1px solid rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(14px);
         }
 
-        .gp-heroCard {
-          padding: 24px;
+        .gp-heroCard,
+        .gp-card {
+          padding: 20px;
         }
 
         .gp-pill {
@@ -723,22 +720,10 @@ export default function Analyze() {
           font-weight: 800;
         }
 
-        .gp-grid {
+        .gp-mainStack {
           margin-top: 18px;
           display: grid;
-          grid-template-columns: 1.05fr 0.95fr;
-          gap: 16px;
-          align-items: start;
-        }
-
-        .gp-leftCol,
-        .gp-rightCol {
-          display: grid;
           gap: 18px;
-        }
-
-        .gp-card {
-          padding: 20px;
         }
 
         .gp-cardHeader {
@@ -882,21 +867,6 @@ export default function Analyze() {
           font-size: 14px;
         }
 
-        .gp-emptyCard {
-          padding: 20px;
-        }
-
-        .gp-emptyTitle {
-          font-size: 22px;
-          font-weight: 800;
-        }
-
-        .gp-emptyText {
-          margin-top: 10px;
-          color: rgba(234,243,255,0.76);
-          line-height: 1.7;
-        }
-
         .gp-badge {
           display: inline-flex;
           align-items: center;
@@ -1034,7 +1004,6 @@ export default function Analyze() {
           }
 
           .gp-quickStats,
-          .gp-grid,
           .gp-row2 {
             grid-template-columns: 1fr;
           }
@@ -1063,14 +1032,8 @@ export default function Analyze() {
           }
 
           .gp-heroCard,
-          .gp-card,
-          .gp-emptyCard {
+          .gp-card {
             border-radius: 18px;
-          }
-
-          .gp-heroCard,
-          .gp-card,
-          .gp-emptyCard {
             padding: 18px;
           }
 
@@ -1090,13 +1053,12 @@ export default function Analyze() {
             font-size: 16px;
           }
 
-          .gp-cardTitle,
-          .gp-emptyTitle {
+          .gp-cardTitle {
             font-size: 20px;
           }
 
           .gp-tvFrame {
-            height: 360px;
+            height: 320px;
           }
         }
       `}</style>
