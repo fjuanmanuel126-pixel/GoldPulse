@@ -297,11 +297,11 @@ export default function Analyze() {
     );
   }
 
-  const usageText =
+  const usageDisplay =
     accessLevel === "admin"
       ? "∞"
       : meta
-      ? `${meta.usedToday}/${meta.limit}`
+      ? `${meta.usedToday}/${meta.limit} hoy`
       : "—";
 
   return (
@@ -371,7 +371,7 @@ export default function Analyze() {
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Uso hoy</div>
-                <div className="gp-statValueSmall">{usageText}</div>
+                <div className="gp-statValueSmall">{usageDisplay}</div>
               </div>
               <div className="gp-statBox">
                 <div className="gp-statLabel">Diario</div>
@@ -382,9 +382,52 @@ export default function Analyze() {
         </section>
 
         <div className="gp-grid">
-          {/* COLUMNA FORM / RESULTADOS EN MÓVIL */}
+          <div className="gp-leftCol">
+            <div className="gp-card">
+              <div className="gp-cardHeader">
+                <div>
+                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
+                  <div className="gp-cardMeta">
+                    {symbol} · {timeframe}
+                  </div>
+                </div>
+                <div className="gp-livePill">Live</div>
+              </div>
+
+              <div className="gp-chartWrap">
+                <iframe
+                  key={`${symbol}-${tvInterval}`}
+                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
+                    symbol
+                  )}&interval=${encodeURIComponent(
+                    tvInterval
+                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
+                  className="gp-tvFrame"
+                />
+              </div>
+            </div>
+
+            {premium && (
+              <ResultCard
+                title={premium.title || "GoldPulse Premium (Institucional)"}
+                side={premium.side}
+                confidence={premium.confidence}
+                entryLabel="Entrada institucional"
+                entryValue={premium.entry}
+                sl={premium.sl}
+                tp1={premium.tp1}
+                tp2={premium.tp2}
+                tp3={premium.tp3}
+                thesisTitle="Tesis de entrada"
+                rationale={premium.rationale}
+                bias={premium.bias}
+                sections={premium.sections}
+              />
+            )}
+          </div>
+
           <div className="gp-rightCol">
-            <div className="gp-card gp-formCard">
+            <div className="gp-card">
               <div className="gp-cardHeader">
                 <div>
                   <div className="gp-cardTitle">Generador de Señales IA</div>
@@ -473,30 +516,7 @@ export default function Analyze() {
               </div>
             </div>
 
-            {premium ? (
-              <ResultCard
-                title={premium.title || "GoldPulse Premium (Institucional)"}
-                side={premium.side}
-                confidence={premium.confidence}
-                entryLabel="Entrada institucional"
-                entryValue={premium.entry}
-                sl={premium.sl}
-                tp1={premium.tp1}
-                tp2={premium.tp2}
-                tp3={premium.tp3}
-                thesisTitle="Tesis de entrada"
-                rationale={premium.rationale}
-                bias={premium.bias}
-                sections={premium.sections}
-              />
-            ) : (
-              <EmptyCard
-                title="Señal Premium"
-                text="Aquí aparecerá la señal premium institucional cuando generes el análisis."
-              />
-            )}
-
-            {flash ? (
+            {flash && (
               <ResultCard
                 title="GoldPulse Scalp"
                 side={flash.side}
@@ -510,39 +530,7 @@ export default function Analyze() {
                 thesisTitle="Impulso"
                 rationale={flash.rationale}
               />
-            ) : (
-              <EmptyCard
-                title="GoldPulse Scalp"
-                text="Aquí aparecerá la señal rápida de scalp cuando generes el análisis."
-              />
             )}
-          </div>
-
-          {/* COLUMNA GRÁFICO */}
-          <div className="gp-leftCol">
-            <div className="gp-card">
-              <div className="gp-cardHeader">
-                <div>
-                  <div className="gp-cardTitle">TradingView (Vista comercial)</div>
-                  <div className="gp-cardMeta">
-                    {symbol} · {timeframe}
-                  </div>
-                </div>
-                <div className="gp-livePill">Live</div>
-              </div>
-
-              <div className="gp-chartWrap">
-                <iframe
-                  key={`${symbol}-${tvInterval}`}
-                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
-                    symbol
-                  )}&interval=${encodeURIComponent(
-                    tvInterval
-                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
-                  className="gp-tvFrame"
-                />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1051,14 +1039,6 @@ export default function Analyze() {
             grid-template-columns: 1fr;
           }
 
-          .gp-rightCol {
-            order: 1;
-          }
-
-          .gp-leftCol {
-            order: 2;
-          }
-
           .gp-bottomNav {
             display: grid;
           }
@@ -1118,21 +1098,8 @@ export default function Analyze() {
           .gp-tvFrame {
             height: 360px;
           }
-
-          .gp-formCard {
-            margin-top: 0;
-          }
         }
       `}</style>
-    </div>
-  );
-}
-
-function EmptyCard({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="gp-emptyCard">
-      <div className="gp-emptyTitle">{title}</div>
-      <div className="gp-emptyText">{text}</div>
     </div>
   );
 }
@@ -1172,7 +1139,7 @@ function ResultCard(props: {
 
       <div className="gp-cardBody">
         {props.bias?.label ? (
-          <div className="gp-section">
+          <div className="gp-section" style={{ marginBottom: 10 }}>
             <div className="gp-sectionTitle">Bias del día</div>
             <div className="gp-sectionText">
               <strong>{props.bias.label}</strong> — {props.bias.explanation}
@@ -1202,14 +1169,12 @@ function ResultCard(props: {
               <div className="gp-v gp-green">{props.tp1}</div>
             </div>
           )}
-
           {typeof props.tp2 === "number" && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 2</div>
               <div className="gp-v gp-green">{props.tp2}</div>
             </div>
           )}
-
           {typeof props.tp3 === "number" && props.tp3 !== 0 && (
             <div className="gp-kvRow">
               <div className="gp-k">Take Profit 3</div>
@@ -1230,14 +1195,12 @@ function ResultCard(props: {
               <div className="gp-sectionText">{props.sections.technical}</div>
             </div>
           )}
-
           {props.sections?.fundamental && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Análisis Fundamental</div>
               <div className="gp-sectionText">{props.sections.fundamental}</div>
             </div>
           )}
-
           {props.sections?.sentiment && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Sentimiento del Mercado</div>
