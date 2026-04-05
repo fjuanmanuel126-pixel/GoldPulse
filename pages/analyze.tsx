@@ -381,7 +381,6 @@ export default function Analyze() {
           </div>
         </section>
 
-        {/* GRÁFICO ARRIBA DE TODO */}
         <div className="gp-mainStack">
           <div className="gp-card">
             <div className="gp-cardHeader">
@@ -414,11 +413,7 @@ export default function Analyze() {
                 <div className="gp-cardMeta">Premium + Scalp</div>
               </div>
               <div className="gp-cardMeta">
-                {accessLevel === "admin"
-                  ? "∞ restantes"
-                  : meta
-                  ? `${meta.remaining} restantes`
-                  : "—"}
+                {accessLevel === "admin" ? "∞ restantes" : meta ? `${meta.remaining} restantes` : "—"}
               </div>
             </div>
 
@@ -637,7 +632,7 @@ export default function Analyze() {
           display: none;
           width: 42px;
           height: 42px;
-          border-radius: 12px;
+          border-radius: 14px;
           border: 1px solid rgba(255,255,255,0.12);
           background: rgba(255,255,255,0.05);
           color: white;
@@ -822,7 +817,7 @@ export default function Analyze() {
         .gp-goldBtn,
         .gp-btnPrimary {
           padding: 12px 16px;
-          border-radius: 12px;
+          border-radius: 14px;
           cursor: pointer;
           font-weight: 800;
         }
@@ -871,24 +866,29 @@ export default function Analyze() {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 10px 12px;
-          border-radius: 14px;
+          padding: 10px 16px;
+          border-radius: 999px;
           background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid rgba(120,190,255,0.16);
           font-size: 13px;
           font-weight: 800;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
         }
 
         .gp-bigConf {
           font-size: 28px;
           font-weight: 900;
+          color: #f4cd7b;
         }
 
         .gp-section {
-          border-radius: 16px;
-          padding: 14px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 18px;
+          padding: 16px;
+          background: linear-gradient(180deg, rgba(3,14,27,0.95), rgba(2,9,18,0.92));
+          border: 1px solid rgba(70,120,190,0.20);
+          box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,0.02),
+            0 8px 22px rgba(0,0,0,0.22);
         }
 
         .gp-sectionTitle {
@@ -906,39 +906,48 @@ export default function Analyze() {
 
         .gp-kv {
           display: grid;
-          gap: 10px;
+          gap: 12px;
         }
 
         .gp-kvRow {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          padding: 12px 14px;
-          border-radius: 14px;
-          background: rgba(0,0,0,0.24);
-          border: 1px solid rgba(255,255,255,0.06);
+          gap: 14px;
+          padding: 16px 18px;
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba(6,17,31,0.96), rgba(3,10,20,0.96));
+          border: 1px solid rgba(62,112,184,0.24);
+          box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,0.02),
+            0 10px 24px rgba(0,0,0,0.18);
           flex-wrap: wrap;
         }
 
         .gp-k {
-          color: rgba(234,243,255,0.66);
+          color: rgba(234,243,255,0.68);
+          font-size: 15px;
         }
 
         .gp-v {
-          font-weight: 800;
+          font-weight: 900;
+          font-size: 18px;
+          letter-spacing: 0.2px;
         }
 
         .gp-green {
-          color: var(--green, #3ee089);
+          color: #7ef0ac;
+          text-shadow: 0 0 12px rgba(72, 255, 157, 0.10);
         }
 
         .gp-red {
-          color: var(--red, #ff6b81);
+          color: #ff7d92;
+          text-shadow: 0 0 12px rgba(255, 80, 110, 0.10);
         }
 
         .gp-sections {
           display: grid;
-          gap: 12px;
+          gap: 14px;
         }
 
         .gp-bottomNav {
@@ -1060,6 +1069,18 @@ export default function Analyze() {
           .gp-tvFrame {
             height: 320px;
           }
+
+          .gp-kvRow {
+            padding: 15px 16px;
+          }
+
+          .gp-k {
+            font-size: 14px;
+          }
+
+          .gp-v {
+            font-size: 17px;
+          }
         }
       `}</style>
     </div>
@@ -1092,9 +1113,7 @@ function ResultCard(props: {
         </div>
 
         <div className="gp-badge">
-          <strong style={{ color: isBuy ? "var(--green, #3ee089)" : "var(--red, #ff6b81)" }}>
-            {props.side}
-          </strong>
+          <strong style={{ color: isBuy ? "#7ef0ac" : "#ff7d92" }}>{props.side}</strong>
           <span style={{ color: "rgba(234,243,255,0.68)" }}>{Math.round(props.confidence)}%</span>
         </div>
       </div>
