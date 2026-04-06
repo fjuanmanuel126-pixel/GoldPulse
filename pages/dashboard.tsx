@@ -159,6 +159,7 @@ export default function DashboardPage() {
 
         {menuOpen && (
           <div className="db-mobileMenu">
+            <button onClick={() => { setMenuOpen(false); router.push("/dashboard"); }}>Dashboard</button>
             <button onClick={() => { setMenuOpen(false); router.push("/analyze"); }}>Analyze</button>
             <button onClick={() => { setMenuOpen(false); router.push("/diary"); }}>Diario</button>
             <button onClick={() => { setMenuOpen(false); router.push("/scalping-goldpulse"); }}>Estrategia</button>
@@ -426,8 +427,9 @@ const styles = `
 
   .db-heroTitle {
     margin: 14px 0 0;
-    font-size: 38px;
+    font-size: 34px;
     line-height: 1.08;
+    font-weight: 800;
   }
 
   .db-heroText {
@@ -435,6 +437,7 @@ const styles = `
     max-width: 760px;
     color: rgba(234, 243, 255, 0.82);
     line-height: 1.7;
+    font-size: 15px;
   }
 
   .db-statCard {
@@ -448,8 +451,9 @@ const styles = `
 
   .db-statValue {
     margin-top: 8px;
-    font-size: 26px;
-    font-weight: 900;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.15;
   }
 
   .db-mainGrid {
@@ -605,6 +609,10 @@ const styles = `
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      font-size: 24px;
     }
 
     .db-mobileMenu {
@@ -647,16 +655,22 @@ const styles = `
       border-radius: 18px;
     }
 
+    .db-topInfo {
+      display: none;
+    }
+
     .db-logo {
       height: 42px;
     }
 
-    .db-topTitle {
-      font-size: 16px;
-    }
-
-    .db-topSub {
-      font-size: 12px;
+    .db-menuBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      font-size: 22px;
     }
 
     .db-heroMain,
@@ -671,7 +685,22 @@ const styles = `
     }
 
     .db-heroTitle {
-      font-size: 30px;
+      font-size: 28px;
+      line-height: 1.08;
+    }
+
+    .db-heroText {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .db-statValue {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .db-cardTitle {
+      font-size: 20px;
     }
   }
 `;
