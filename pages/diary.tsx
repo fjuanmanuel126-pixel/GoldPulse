@@ -118,6 +118,32 @@ function mergeAutoOutcome(prev: Outcome, next: Outcome): Outcome {
   return prev;
 }
 
+function applyAutomaticOutcomes(
+  items: JournalItem[],
+  prices: Record<string, string>
+): { nextItems: JournalItem[]; changed: boolean } {
+  let changed = false;
+
+  const nextItems = items.map((item) => {
+    const raw = prices[item.symbol];
+    const currentPrice = Number(raw);
+
+    if (!raw || !Number.isFinite(currentPrice)) return item;
+
+    const auto = detectOutcome(item, currentPrice);
+    const merged = mergeAutoOutcome(item.outcome, auto);
+
+    if (merged !== item.outcome) {
+      changed = true;
+      return { ...item, outcome: merged };
+    }
+
+    return item;
+  });
+
+  return { nextItems, changed };
+}
+
 function DonutCard(props: {
   title: string;
   subtitle: string;
@@ -215,9 +241,13 @@ export default function Diary() {
   useEffect(() => {
     const loaded = loadJournal();
     const fixed = loaded.map((x) => ({ ...x, outcome: x.outcome || "PENDING" }));
-    setItems(fixed);
-    saveJournal(fixed);
-    setPrices(loadPrices());
+    const loadedPrices = loadPrices();
+
+    const { nextItems } = applyAutomaticOutcomes(fixed, loadedPrices);
+
+    setItems(nextItems);
+    setPrices(loadedPrices);
+    saveJournal(nextItems);
   }, []);
 
   useEffect(() => {
@@ -227,29 +257,13 @@ export default function Diary() {
   useEffect(() => {
     if (!items.length) return;
 
-    let changed = false;
-
-    const next = items.map((item) => {
-      const raw = prices[item.symbol];
-      const currentPrice = Number(raw);
-      if (!raw || !Number.isFinite(currentPrice)) return item;
-
-      const auto = detectOutcome(item, currentPrice);
-      const merged = mergeAutoOutcome(item.outcome, auto);
-
-      if (merged !== item.outcome) {
-        changed = true;
-        return { ...item, outcome: merged };
-      }
-
-      return item;
-    });
+    const { nextItems, changed } = applyAutomaticOutcomes(items, prices);
 
     if (changed) {
-      setItems(next);
-      saveJournal(next);
+      setItems(nextItems);
+      saveJournal(nextItems);
     }
-  }, [prices, items]);
+  }, [prices]);
 
   const months = useMemo(() => {
     const set = new Set(items.map((x) => monthKey(x.createdAt)));
