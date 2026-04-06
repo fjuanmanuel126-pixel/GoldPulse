@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!apiKey) {
       return res.status(500).json({
         ok: false,
-        error: "Falta TWELVE_DATA_API_KEY en variables de entorno",
+        error: "a26711d9c39a4c9e981b8bfe7f897ea9",
       });
     }
 
@@ -43,10 +43,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       prices,
       updatedAt: Date.now(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "No se pudieron obtener precios";
+
     return res.status(500).json({
       ok: false,
-      error: error?.message || "No se pudieron obtener precios",
+      error: message,
     });
   }
 }

@@ -23,6 +23,8 @@ type JournalItem = {
   pnl?: number;
 };
 
+type PricesMap = Record<string, string>;
+
 const JOURNAL_KEY = "goldpulse_journal_v1";
 const DIARY_PRICES_KEY = "goldpulse_diary_prices_v1";
 
@@ -43,7 +45,7 @@ function saveJournal(items: JournalItem[]) {
   localStorage.setItem(JOURNAL_KEY, JSON.stringify(items));
 }
 
-function loadPrices(): Record<string, string> {
+function loadPrices(): PricesMap {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(DIARY_PRICES_KEY);
@@ -55,7 +57,7 @@ function loadPrices(): Record<string, string> {
   }
 }
 
-function savePrices(prices: Record<string, string>) {
+function savePrices(prices: PricesMap) {
   if (typeof window === "undefined") return;
   localStorage.setItem(DIARY_PRICES_KEY, JSON.stringify(prices));
 }
@@ -73,7 +75,9 @@ function monthLabel(key: string) {
 
 function yyyyMmDd(ts: number) {
   const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
 }
 
 function clamp(n: number, a: number, b: number) {
@@ -120,7 +124,7 @@ function mergeAutoOutcome(prev: Outcome, next: Outcome): Outcome {
 
 function applyAutomaticOutcomes(
   items: JournalItem[],
-  prices: Record<string, string>
+  prices: PricesMap
 ): { nextItems: JournalItem[]; changed: boolean } {
   let changed = false;
 
@@ -161,7 +165,14 @@ function DonutCard(props: {
   return (
     <div className="gp-card">
       <div className="gp-cardBody" style={{ padding: 22 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 16,
+            alignItems: "flex-start",
+          }}
+        >
           <div>
             <div className="gp-cardTitle">{props.title}</div>
             <div className="gp-cardMeta">{props.subtitle}</div>
@@ -233,14 +244,14 @@ export default function Diary() {
   const [items, setItems] = useState<JournalItem[]>([]);
   const [activeMonth, setActiveMonth] = useState<string>("");
   const [page, setPage] = useState(1);
-  const [prices, setPrices] = useState<Record<string, string>>({});
+  const [prices, setPrices] = useState<PricesMap>({});
   const [menuOpen, setMenuOpen] = useState(false);
 
   const PAGE_SIZE = 2;
 
   useEffect(() => {
     const loaded = loadJournal();
-    const fixed = loaded.map((x) => ({ ...x, outcome: x.outcome || "PENDING" }));
+    const fixed = loaded.map((x) => ({ ...x, outcome: x.outcome || ("PENDING" as Outcome) }));
     const loadedPrices = loadPrices();
 
     const { nextItems } = applyAutomaticOutcomes(fixed, loadedPrices);
@@ -263,7 +274,44 @@ export default function Diary() {
       setItems(nextItems);
       saveJournal(nextItems);
     }
-  }, [prices]);
+  }, [prices, items]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchAutoPrices() {
+      try {
+        const res = await fetch("/api/prices");
+        const data = await res.json();
+
+        if (!res.ok || !data?.ok || !data?.prices) return;
+        if (!isMounted) return;
+
+        const nextPrices: PricesMap = {};
+
+        for (const [symbol, value] of Object.entries(data.prices as Record<string, number>)) {
+          if (typeof value === "number" && Number.isFinite(value)) {
+            nextPrices[symbol] = String(value);
+          }
+        }
+
+        setPrices((prev) => ({
+          ...prev,
+          ...nextPrices,
+        }));
+      } catch (err) {
+        console.error("Error obteniendo precios automáticos:", err);
+      }
+    }
+
+    fetchAutoPrices();
+    const intervalId = window.setInterval(fetchAutoPrices, 15000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const months = useMemo(() => {
     const set = new Set(items.map((x) => monthKey(x.createdAt)));
@@ -427,7 +475,7 @@ export default function Diary() {
             <div>
               <div className="gp-cardTitle">Detección automática de TP / SL</div>
               <div className="gp-cardMeta">
-                Escribe el precio actual por símbolo y el diario marcará automáticamente los targets alcanzados.
+                Los precios se actualizan automáticamente desde la API y el diario marcará los targets alcanzados.
               </div>
             </div>
           </div>
@@ -440,17 +488,7 @@ export default function Diary() {
                 {symbolsInJournal.map((symbol) => (
                   <div key={symbol} className="gp-section">
                     <div className="gp-label">{symbol}</div>
-                    <input
-                      className="gp-input"
-                      placeholder="Precio actual"
-                      value={prices[symbol] || ""}
-                      onChange={(e) =>
-                        setPrices((prev) => ({
-                          ...prev,
-                          [symbol]: e.target.value,
-                        }))
-                      }
-                    />
+                    <input className="gp-input" value={prices[symbol] || ""} readOnly />
                   </div>
                 ))}
               </div>
@@ -459,7 +497,10 @@ export default function Diary() {
         </div>
 
         <div className="gp-card" style={{ marginBottom: 18 }}>
-          <div className="gp-cardBody" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div
+            className="gp-cardBody"
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+          >
             <div>
               <div className="gp-cardTitle">Diario de operaciones</div>
               <div className="gp-cardMeta">
@@ -648,8 +689,8 @@ export default function Diary() {
             {monthItems.length === 0 ? (
               <div className="gp-help">Aún no hay operaciones este mes.</div>
             ) : (
-              <details className="gp-section" open={false}>
-                <summary style={{ cursor: "pointer", fontWeight: 900, listStyle: "none" as any }}>
+              <details className="gp-section">
+                <summary className="gp-summaryToggle">
                   📌 Ver / Ocultar registro (paginado)
                 </summary>
 
@@ -672,8 +713,10 @@ export default function Diary() {
                         <div className="gp-cardMeta" style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                           <span>
                             <b>{x.kind === "PREMIUM" ? "Premium" : "Scalp"}</b> · {x.symbol} · {x.timeframe} ·{" "}
-                            <b style={{ color: x.side === "BUY" ? "var(--green, #3ee089)" : "var(--red, #ff6b81)" }}>{x.side}</b> ·{" "}
-                            {Math.round(x.confidence)}%
+                            <b style={{ color: x.side === "BUY" ? "var(--green, #3ee089)" : "var(--red, #ff6b81)" }}>
+                              {x.side}
+                            </b>{" "}
+                            · {Math.round(x.confidence)}%
                           </span>
                           <span>{dt.toLocaleString()}</span>
                         </div>
@@ -873,19 +916,6 @@ const styles = `
     border: 1px solid rgba(255,255,255,0.07);
   }
 
-  .gp-sectionTitle {
-    font-size: 14px;
-    font-weight: 800;
-    color: rgba(255,220,160,0.92);
-  }
-
-  .gp-sectionText {
-    margin-top: 8px;
-    color: rgba(234,243,255,0.78);
-    line-height: 1.7;
-    font-size: 14px;
-  }
-
   .gp-label {
     color: rgba(234,243,255,0.84);
     font-size: 13px;
@@ -951,6 +981,12 @@ const styles = `
     border: 1px solid rgba(255,255,255,0.12);
     background: rgba(255,255,255,0.05);
     color: white;
+  }
+
+  .gp-summaryToggle {
+    cursor: pointer;
+    font-weight: 900;
+    list-style: none;
   }
 
   .gp-bottomNav {
