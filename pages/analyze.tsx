@@ -302,8 +302,8 @@ export default function Analyze() {
     accessLevel === "admin"
       ? "∞"
       : meta
-      ? `${meta.usedToday}/${meta.limit} hoy`
-      : "—";
+        ? `${meta.usedToday}/${meta.limit} hoy`
+        : "—";
 
   return (
     <div className="gp-page">
@@ -398,11 +398,7 @@ export default function Analyze() {
               <div className="gp-chartWrap">
                 <iframe
                   key={`${symbol}-${tvInterval}`}
-                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(
-                    symbol
-                  )}&interval=${encodeURIComponent(
-                    tvInterval
-                  )}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
+                  src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(tvInterval)}&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=0&saveimage=0&toolbarbg=%230a1623&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`}
                   className="gp-tvFrame"
                 />
               </div>
@@ -439,8 +435,8 @@ export default function Analyze() {
                   {accessLevel === "admin"
                     ? "∞ restantes"
                     : meta
-                    ? `${meta.remaining} restantes`
-                    : "—"}
+                      ? `${meta.remaining} restantes`
+                      : "—"}
                 </div>
               </div>
 
@@ -557,7 +553,7 @@ export default function Analyze() {
         </section>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         .gp-page {
           min-height: 100vh;
           color: #eaf3ff;
@@ -870,12 +866,19 @@ export default function Analyze() {
         }
 
         .gp-btnPrimary {
-          border: 1px solid rgba(120,190,255,0.35);
-          background: linear-gradient(90deg, rgba(255, 204, 107, 0.95), rgba(73, 194, 255, 0.95));
-          color: #08131f;
+          border: 1px solid rgba(255, 205, 112, 0.35);
+          background: linear-gradient(180deg, rgba(255, 211, 122, 0.96), rgba(211, 154, 46, 0.96));
+          color: #101010;
           box-shadow:
-            0 10px 30px rgba(73, 194, 255, 0.16),
-            0 8px 24px rgba(255, 204, 107, 0.16);
+            0 12px 28px rgba(255, 190, 80, 0.22),
+            inset 0 1px 0 rgba(255,255,255,0.28);
+        }
+
+        .gp-btnPrimary:hover {
+          transform: translateY(-1px);
+          box-shadow:
+            0 16px 34px rgba(255, 190, 80, 0.30),
+            inset 0 1px 0 rgba(255,255,255,0.32);
         }
 
         .gp-btnPrimary:disabled {
