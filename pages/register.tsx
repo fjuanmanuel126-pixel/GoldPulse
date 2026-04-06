@@ -19,89 +19,36 @@ export default function RegisterPage() {
     setError("");
     setMessage("");
 
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
+    try {
+      const cleanName = name.trim();
+      const cleanEmail = email.trim().toLowerCase();
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            full_name: cleanName,
+          },
         },
-      },
-    });
-
-    if (signUpError) {
-      setLoading(false);
-      setError(signUpError.message);
-      return;
-    }
-
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (loginError) {
-      setLoading(false);
-      setError(loginError.message);
-      return;
-    }
-
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !userData.user) {
-      setLoading(false);
-      setError("No se pudo obtener el usuario después del registro.");
-      return;
-    }
-
-    const user = userData.user;
-
-    const { data: existingProfile, error: existingProfileError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (existingProfileError) {
-      setLoading(false);
-      setError(existingProfileError.message);
-      return;
-    }
-
-    if (!existingProfile) {
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: user.email ?? "",
-        full_name: name,
-        access_level: "free",
       });
 
-      if (insertError) {
+      if (signUpError) {
+        setError(signUpError.message);
         setLoading(false);
-        setError(insertError.message);
         return;
       }
-    } else {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          email: user.email ?? "",
-          full_name: name,
-        })
-        .eq("id", user.id);
 
-      if (updateError) {
-        setLoading(false);
-        setError(updateError.message);
-        return;
-      }
+      setMessage("Cuenta creada correctamente. Si tu proyecto usa confirmación por correo, revisa tu email antes de iniciar sesión.");
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
+    } catch (err: any) {
+      setError(err?.message || "Ocurrió un error al crear la cuenta.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    setMessage("Cuenta creada correctamente.");
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 800);
   }
 
   return (
@@ -151,6 +98,7 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={inputStyle}
+            required
           />
 
           <input
@@ -159,6 +107,8 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={inputStyle}
+            minLength={6}
+            required
           />
 
           <button type="submit" disabled={loading} style={goldBtn}>

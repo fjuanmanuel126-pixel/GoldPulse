@@ -16,70 +16,64 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const cleanEmail = email.trim().toLowerCase();
 
-    if (loginError) {
-      setLoading(false);
-      setError(loginError.message);
-      return;
-    }
-
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !userData.user) {
-      setLoading(false);
-      setError("No se pudo obtener el usuario.");
-      return;
-    }
-
-    const user = userData.user;
-
-    const { data: existingProfile, error: existingProfileError } = await supabase
-      .from("profiles")
-      .select("id, access_level")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (existingProfileError) {
-      setLoading(false);
-      setError(existingProfileError.message);
-      return;
-    }
-
-    if (!existingProfile) {
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: user.email ?? "",
-        full_name: user.user_metadata?.full_name ?? "",
-        access_level: "free",
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
       });
 
-      if (insertError) {
+      if (loginError) {
         setLoading(false);
-        setError(insertError.message);
+        setError(loginError.message);
         return;
       }
-    } else {
-      const { error: updateError } = await supabase
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setLoading(false);
+        setError("No se pudo obtener el usuario.");
+        return;
+      }
+
+      const { data: existingProfile, error: existingProfileError } = await supabase
         .from("profiles")
-        .update({
-          email: user.email ?? "",
-          full_name: user.user_metadata?.full_name ?? "",
-        })
-        .eq("id", user.id);
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      if (updateError) {
+      if (existingProfileError) {
         setLoading(false);
-        setError(updateError.message);
+        setError(existingProfileError.message);
         return;
       }
-    }
 
-    setLoading(false);
-    router.push("/dashboard");
+      if (!existingProfile) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: user.id,
+          email: user.email ?? cleanEmail,
+          full_name: user.user_metadata?.full_name ?? "",
+          access_level: "free",
+        });
+
+        if (insertError) {
+          setLoading(false);
+          setError(insertError.message);
+          return;
+        }
+      }
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.message || "Ocurrió un error al iniciar sesión.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -121,6 +115,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={inputStyle}
+            required
           />
 
           <input
@@ -129,6 +124,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={inputStyle}
+            required
           />
 
           <button type="submit" disabled={loading} style={goldBtn}>
