@@ -23,7 +23,7 @@ export default function Home() {
           </nav>
 
           <div className="lp-actions">
-            <Link className="lp-btnGold" href="/analyze">
+            <Link className="lp-btnGold" href="/login">
               Ingresar
             </Link>
           </div>
@@ -46,6 +46,7 @@ export default function Home() {
             <a href="#como-funciona" onClick={() => setMenuOpen(false)}>Cómo funciona</a>
             <a href="#planes" onClick={() => setMenuOpen(false)}>Planes</a>
             <a href="#contacto" onClick={() => setMenuOpen(false)}>Contacto</a>
+            <Link href="/register" onClick={() => setMenuOpen(false)}>Crear cuenta</Link>
             <Link href="/login" onClick={() => setMenuOpen(false)}>Ingresar</Link>
           </div>
         )}
@@ -65,8 +66,8 @@ export default function Home() {
             </p>
 
             <div className="lp-ctaRow">
-              <Link className="lp-btnGoldHero" href="/upgrade">
-                Acceder al plan premium
+              <Link className="lp-btnGoldHero" href="/register">
+                Crear cuenta
               </Link>
               <Link className="lp-btnOutline" href="/login">
                 Ingresar
@@ -150,7 +151,7 @@ export default function Home() {
               </ul>
 
               <div className="lp-cardButtons">
-                <Link className="lp-cardBtn" href="/upgrade">
+                <Link className="lp-cardBtn" href="/register">
                   REGÍSTRATE YA
                 </Link>
                 <Link className="lp-cardBtnSecondary" href="/login">
@@ -232,17 +233,17 @@ export default function Home() {
           <div className="lp-steps">
             <div className="lp-step">
               <div className="lp-stepNum">01</div>
-              <div className="lp-stepTitle">Selecciona el activo</div>
+              <div className="lp-stepTitle">Crea tu cuenta</div>
               <div className="lp-stepText">
-                Elige símbolo, timeframe y precio actual para contextualizar el análisis.
+                Regístrate gratis y entra en la plataforma.
               </div>
             </div>
 
             <div className="lp-step">
               <div className="lp-stepNum">02</div>
-              <div className="lp-stepTitle">Genera la señal</div>
+              <div className="lp-stepTitle">Activa premium si quieres Analyze</div>
               <div className="lp-stepText">
-                Recibe una señal premium o una señal flash con niveles claros y presentación más profesional.
+                El acceso premium desbloquea la página Analyze y las funciones avanzadas.
               </div>
             </div>
 
@@ -329,13 +330,13 @@ export default function Home() {
               <div className="lp-sectionEyebrow">CONTACTO Y ACCESO</div>
               <h2 className="lp-h2">Entra al ecosistema completo GoldPulse Pro</h2>
               <p className="lp-sectionLead">
-                Accede a una experiencia más premium para analizar, seguir y organizar tu operativa.
+                Regístrate gratis. El acceso a Analyze se desbloquea solo para usuarios premium.
               </p>
             </div>
 
             <div className="lp-ctaFinalActions">
-              <Link className="lp-cardBtn" href="/upgrade">
-                ACTIVAR PLAN PREMIUM
+              <Link className="lp-cardBtn" href="/register">
+                CREAR CUENTA
               </Link>
               <Link className="lp-btnOutline" href="/login">
                 INGRESAR
