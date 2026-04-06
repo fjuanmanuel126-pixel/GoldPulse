@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -39,11 +41,13 @@ export default function RegisterPage() {
         return;
       }
 
-      setMessage("Cuenta creada correctamente. Si tu proyecto usa confirmación por correo, revisa tu email antes de iniciar sesión.");
+      setMessage(
+        "Cuenta creada correctamente. Revisa tu correo para confirmar el registro si tu proyecto tiene la verificación por email activada."
+      );
 
       setTimeout(() => {
         router.push("/login");
-      }, 1200);
+      }, 1500);
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al crear la cuenta.");
     } finally {
@@ -101,15 +105,25 @@ export default function RegisterPage() {
             required
           />
 
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={inputStyle}
-            minLength={6}
-            required
-          />
+          <div style={passwordWrap}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={passwordInputStyle}
+              minLength={6}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              style={eyeBtn}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {showPassword ? "🙈" : "👁"}
+            </button>
+          </div>
 
           <button type="submit" disabled={loading} style={goldBtn}>
             {loading ? "Creando cuenta..." : "Registrarme"}
@@ -130,6 +144,36 @@ const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.04)",
   color: "white",
   outline: "none",
+};
+
+const passwordWrap: React.CSSProperties = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+};
+
+const passwordInputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 52px 12px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.04)",
+  color: "white",
+  outline: "none",
+};
+
+const eyeBtn: React.CSSProperties = {
+  position: "absolute",
+  right: 8,
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: 38,
+  height: 38,
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.05)",
+  color: "white",
+  cursor: "pointer",
 };
 
 const goldBtn: React.CSSProperties = {
