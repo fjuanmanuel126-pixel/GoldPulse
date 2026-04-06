@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,13 +36,13 @@ export default function LoginPage() {
     try {
       const cleanEmail = email.trim().toLowerCase();
 
-      const { error: loginError } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
-      if (loginError) {
-        setError(loginError.message);
+      if (error) {
+        setError(error.message);
         return;
       }
 
@@ -55,73 +54,17 @@ export default function LoginPage() {
         localStorage.removeItem(SAVED_EMAIL_KEY);
       }
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setError("No se pudo obtener el usuario.");
-        return;
-      }
-
-      const { data: existingProfile, error: existingProfileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (existingProfileError) {
-        setError(existingProfileError.message);
-        return;
-      }
-
-      if (!existingProfile) {
-        const { error: insertError } = await supabase.from("profiles").insert({
-          id: user.id,
-          email: user.email ?? cleanEmail,
-          full_name: user.user_metadata?.full_name ?? "",
-          access_level: "free",
-        });
-
-        if (insertError) {
-          setError(insertError.message);
-          return;
-        }
-      }
-
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err?.message || "Ocurrió un error al iniciar sesión.");
+      setError(err?.message || "Error al iniciar sesión.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(900px 500px at 20% 20%, rgba(60,180,255,0.12), transparent 55%), radial-gradient(900px 600px at 80% 30%, rgba(255,190,80,0.10), transparent 60%), linear-gradient(180deg, #06101a, #08111b 50%, #050b12 100%)",
-        color: "white",
-        padding: "40px 20px",
-        display: "grid",
-        placeItems: "center",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 440,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "0 25px 80px rgba(0,0,0,0.35)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
+    <div style={pageStyle}>
+      <div style={cardStyle}>
         <img
           src="/branding/logo.png"
           alt="GoldPulse Pro"
@@ -153,7 +96,6 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               style={eyeBtn}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
             >
               {showPassword ? "🙈" : "👁"}
             </button>
@@ -179,22 +121,43 @@ export default function LoginPage() {
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const pageStyle = {
+  minHeight: "100vh",
+  background:
+    "radial-gradient(900px 500px at 20% 20%, rgba(60,180,255,0.12), transparent 55%), radial-gradient(900px 600px at 80% 30%, rgba(255,190,80,0.10), transparent 60%), linear-gradient(180deg, #06101a, #08111b 50%, #050b12 100%)",
+  color: "white",
+  padding: "40px 20px",
+  display: "grid",
+  placeItems: "center",
+} as React.CSSProperties;
+
+const cardStyle = {
+  width: "100%",
+  maxWidth: 440,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 20,
+  padding: 24,
+  boxShadow: "0 25px 80px rgba(0,0,0,0.35)",
+  backdropFilter: "blur(10px)",
+} as React.CSSProperties;
+
+const inputStyle = {
   padding: 12,
   borderRadius: 12,
   border: "1px solid rgba(255,255,255,0.10)",
   background: "rgba(255,255,255,0.04)",
   color: "white",
   outline: "none",
-};
+} as React.CSSProperties;
 
-const passwordWrap: React.CSSProperties = {
+const passwordWrap = {
   position: "relative",
   display: "flex",
   alignItems: "center",
-};
+} as React.CSSProperties;
 
-const passwordInputStyle: React.CSSProperties = {
+const passwordInputStyle = {
   width: "100%",
   padding: "12px 52px 12px 12px",
   borderRadius: 12,
@@ -202,9 +165,9 @@ const passwordInputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.04)",
   color: "white",
   outline: "none",
-};
+} as React.CSSProperties;
 
-const eyeBtn: React.CSSProperties = {
+const eyeBtn = {
   position: "absolute",
   right: 8,
   top: "50%",
@@ -216,17 +179,17 @@ const eyeBtn: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
   color: "white",
   cursor: "pointer",
-};
+} as React.CSSProperties;
 
-const rememberRow: React.CSSProperties = {
+const rememberRow = {
   display: "flex",
   alignItems: "center",
   gap: 8,
   color: "rgba(255,255,255,0.85)",
   fontSize: 14,
-};
+} as React.CSSProperties;
 
-const goldBtn: React.CSSProperties = {
+const goldBtn = {
   padding: 12,
   borderRadius: 12,
   border: "1px solid rgba(255,200,110,0.45)",
@@ -234,4 +197,4 @@ const goldBtn: React.CSSProperties = {
   color: "white",
   cursor: "pointer",
   fontWeight: 800,
-};
+} as React.CSSProperties;

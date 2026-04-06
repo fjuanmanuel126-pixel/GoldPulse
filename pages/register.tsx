@@ -10,7 +10,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -25,7 +24,7 @@ export default function RegisterPage() {
       const cleanName = name.trim();
       const cleanEmail = email.trim().toLowerCase();
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -35,63 +34,23 @@ export default function RegisterPage() {
         },
       });
 
-      if (signUpError) {
-        setError(signUpError.message);
+      if (error) {
+        setError(error.message);
         return;
       }
 
-      const user = signUpData.user;
-
-      if (user) {
-        const { error: upsertError } = await supabase.from("profiles").upsert({
-          id: user.id,
-          email: user.email ?? cleanEmail,
-          full_name: cleanName || null,
-          access_level: "free",
-        });
-
-        if (upsertError) {
-          setError(upsertError.message);
-          return;
-        }
-      }
-
       setMessage("Cuenta creada correctamente. Ya puedes iniciar sesión.");
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 1200);
+      setTimeout(() => router.push("/login"), 1200);
     } catch (err: any) {
-      setError(err?.message || "Ocurrió un error al crear la cuenta.");
+      setError(err?.message || "Error al crear la cuenta.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(900px 500px at 20% 20%, rgba(60,180,255,0.12), transparent 55%), radial-gradient(900px 600px at 80% 30%, rgba(255,190,80,0.10), transparent 60%), linear-gradient(180deg, #06101a, #08111b 50%, #050b12 100%)",
-        color: "white",
-        padding: "40px 20px",
-        display: "grid",
-        placeItems: "center",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 440,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 20,
-          padding: 24,
-          boxShadow: "0 25px 80px rgba(0,0,0,0.35)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
+    <div style={pageStyle}>
+      <div style={cardStyle}>
         <img
           src="/branding/logo.png"
           alt="GoldPulse Pro"
@@ -132,7 +91,6 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               style={eyeBtn}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
             >
               {showPassword ? "🙈" : "👁"}
             </button>
@@ -149,6 +107,27 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+const pageStyle: React.CSSProperties = {
+  minHeight: "100vh",
+  background:
+    "radial-gradient(900px 500px at 20% 20%, rgba(60,180,255,0.12), transparent 55%), radial-gradient(900px 600px at 80% 30%, rgba(255,190,80,0.10), transparent 60%), linear-gradient(180deg, #06101a, #08111b 50%, #050b12 100%)",
+  color: "white",
+  padding: "40px 20px",
+  display: "grid",
+  placeItems: "center",
+};
+
+const cardStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: 440,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 20,
+  padding: 24,
+  boxShadow: "0 25px 80px rgba(0,0,0,0.35)",
+  backdropFilter: "blur(10px)",
+};
 
 const inputStyle: React.CSSProperties = {
   padding: 12,
