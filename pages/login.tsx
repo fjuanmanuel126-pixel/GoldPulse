@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
@@ -101,14 +102,20 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <label style={rememberRow}>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <span>Recordarme</span>
-          </label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <label style={rememberRow}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>Recordarme</span>
+            </label>
+
+            <Link href="/forgot-password" style={forgotLink}>
+              ¿Has olvidado tu contraseña?
+            </Link>
+          </div>
 
           <button type="submit" disabled={loading} style={goldBtn}>
             {loading ? "Entrando..." : "Entrar"}
@@ -187,6 +194,13 @@ const rememberRow = {
   gap: 8,
   color: "rgba(255,255,255,0.85)",
   fontSize: 14,
+} as React.CSSProperties;
+
+const forgotLink = {
+  color: "rgba(255,220,160,0.95)",
+  textDecoration: "none",
+  fontSize: 14,
+  fontWeight: 700,
 } as React.CSSProperties;
 
 const goldBtn = {
