@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
 type Outcome = "PENDING" | "TP1" | "TP2" | "TP3" | "SL";
+type AccessLevel = "free" | "premium" | "vip" | "admin";
 
 type JournalItem = {
   id: string;
@@ -45,6 +47,11 @@ function saveJournal(items: JournalItem[]) {
   localStorage.setItem(JOURNAL_KEY, JSON.stringify(items));
 }
 
+function clearJournal() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(JOURNAL_KEY);
+}
+
 function loadPrices(): PricesMap {
   if (typeof window === "undefined") return {};
   try {
@@ -60,6 +67,11 @@ function loadPrices(): PricesMap {
 function savePrices(prices: PricesMap) {
   if (typeof window === "undefined") return;
   localStorage.setItem(DIARY_PRICES_KEY, JSON.stringify(prices));
+}
+
+function clearPrices() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(DIARY_PRICES_KEY);
 }
 
 function monthKey(ts: number) {
@@ -246,8 +258,37 @@ export default function Diary() {
   const [page, setPage] = useState(1);
   const [prices, setPrices] = useState<PricesMap>({});
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const PAGE_SIZE = 2;
+  const isAdmin = accessLevel === "admin";
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+
+    async function loadAccess() {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("access_level")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.access_level) {
+          setAccessLevel(profile.access_level as AccessLevel);
+        }
+      } catch {
+        setAccessLevel(null);
+      }
+    }
+
+    loadAccess();
+  }, []);
 
   useEffect(() => {
     const loaded = loadJournal();
@@ -312,6 +353,28 @@ export default function Diary() {
       window.clearInterval(intervalId);
     };
   }, []);
+
+  async function handleClearHistory() {
+    if (!isAdmin) return;
+
+    const ok = window.confirm(
+      "¿Seguro que quieres limpiar todo el historial del diario? Esta acción borrará journal y precios guardados."
+    );
+
+    if (!ok) return;
+
+    setClearing(true);
+    try {
+      clearJournal();
+      clearPrices();
+      setItems([]);
+      setPrices({});
+      setActiveMonth("");
+      setPage(1);
+    } finally {
+      setClearing(false);
+    }
+  }
 
   const months = useMemo(() => {
     const set = new Set(items.map((x) => monthKey(x.createdAt)));
@@ -484,17 +547,47 @@ export default function Diary() {
             {symbolsInJournal.length === 0 ? (
               <div className="gp-help">Aún no hay símbolos en el diario.</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+              <div className="gp-autoStatusGrid">
                 {symbolsInJournal.map((symbol) => (
-                  <div key={symbol} className="gp-section">
-                    <div className="gp-label">{symbol}</div>
-                    <input className="gp-input" value={prices[symbol] || ""} readOnly />
+                  <div key={symbol} className="gp-autoStatusItem">
+                    <div className="gp-autoStatusDot" />
+                    <span>{symbol}</span>
+                    <span className="gp-autoStatusReady">Auto detectando</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
+
+        {isAdmin && (
+          <div className="gp-card" style={{ marginBottom: 18 }}>
+            <div className="gp-cardHeader">
+              <div>
+                <div className="gp-cardTitle">Herramientas de administrador</div>
+                <div className="gp-cardMeta">
+                  Opciones internas de mantenimiento del diario
+                </div>
+              </div>
+            </div>
+
+            <div className="gp-cardBody">
+              <div className="gp-adminRow">
+                <div className="gp-help">
+                  Esto borrará completamente el historial del diario y los precios guardados en este navegador.
+                </div>
+                <button
+                  type="button"
+                  className="gp-dangerBtn"
+                  onClick={handleClearHistory}
+                  disabled={clearing}
+                >
+                  {clearing ? "Limpiando..." : "Limpiar historial"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="gp-card" style={{ marginBottom: 18 }}>
           <div
@@ -764,328 +857,388 @@ export default function Diary() {
         </section>
       </div>
 
-      <style jsx>{styles}</style>
+      <style jsx>{`
+        .gp-page {
+          min-height: 100vh;
+          color: #eaf3ff;
+          background:
+            radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
+            radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
+            linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.92)),
+            url("/landing/hero-bg.jpg");
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+        }
+
+        .gp-page:before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          background: url("/landing/sparkles.png");
+          background-size: cover;
+          background-position: center;
+          opacity: 0.55;
+          mix-blend-mode: screen;
+        }
+
+        .gp-wrap {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 16px 16px 92px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .gp-topbar {
+          position: sticky;
+          top: 8px;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 12px 14px;
+          border-radius: 20px;
+          background: rgba(0, 0, 0, 0.42);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+          backdrop-filter: blur(14px);
+        }
+
+        .gp-topbarLeft {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+        }
+
+        .gp-logo {
+          height: 52px;
+          width: auto;
+          display: block;
+          cursor: pointer;
+        }
+
+        .gp-topTitle {
+          font-size: 18px;
+          font-weight: 800;
+        }
+
+        .gp-topSub {
+          margin-top: 4px;
+          color: rgba(234, 243, 255, 0.72);
+          font-size: 13px;
+        }
+
+        .gp-topActions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .gp-menuBtn {
+          display: none;
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.05);
+          color: white;
+          font-size: 20px;
+        }
+
+        .gp-mobileMenu {
+          display: none;
+        }
+
+        .gp-card {
+          border-radius: 22px;
+          background: rgba(0, 0, 0, 0.34);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(14px);
+          padding: 20px;
+        }
+
+        .gp-cardHeader {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .gp-cardTitle {
+          font-size: 22px;
+          font-weight: 800;
+        }
+
+        .gp-cardMeta {
+          margin-top: 4px;
+          color: rgba(234,243,255,0.68);
+          font-size: 13px;
+        }
+
+        .gp-cardBody {
+          display: grid;
+          gap: 14px;
+        }
+
+        .gp-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+
+        .gp-gridCalendar {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 16px;
+        }
+
+        .gp-section {
+          border-radius: 16px;
+          padding: 14px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .gp-label {
+          color: rgba(234,243,255,0.84);
+          font-size: 13px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+
+        .gp-select,
+        .gp-input {
+          width: 100%;
+          padding: 13px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.10);
+          background: rgba(255,255,255,0.04);
+          color: white;
+          outline: none;
+        }
+
+        .gp-kv {
+          display: grid;
+          gap: 10px;
+        }
+
+        .gp-kvRow {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          background: rgba(0,0,0,0.24);
+          border: 1px solid rgba(255,255,255,0.06);
+          flex-wrap: wrap;
+        }
+
+        .gp-k {
+          color: rgba(234,243,255,0.66);
+        }
+
+        .gp-v {
+          font-weight: 800;
+        }
+
+        .gp-green {
+          color: var(--green, #3ee089);
+        }
+
+        .gp-red {
+          color: var(--red, #ff6b81);
+        }
+
+        .gp-help {
+          color: rgba(234,243,255,0.68);
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .gp-uploadBtn,
+        .gp-softBtn,
+        .gp-dangerBtn {
+          padding: 12px 16px;
+          border-radius: 12px;
+          cursor: pointer;
+          font-weight: 800;
+        }
+
+        .gp-uploadBtn,
+        .gp-softBtn {
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.05);
+          color: white;
+        }
+
+        .gp-dangerBtn {
+          border: 1px solid rgba(255, 90, 90, 0.28);
+          background: linear-gradient(180deg, rgba(255, 90, 90, 0.18), rgba(0,0,0,0.2));
+          color: #ffdede;
+          min-width: 180px;
+        }
+
+        .gp-dangerBtn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .gp-summaryToggle {
+          cursor: pointer;
+          font-weight: 900;
+          list-style: none;
+        }
+
+        .gp-autoStatusGrid {
+          display: grid;
+          gap: 10px;
+        }
+
+        .gp-autoStatusItem {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 16px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: white;
+          flex-wrap: wrap;
+        }
+
+        .gp-autoStatusDot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+          background: #3ee089;
+          box-shadow: 0 0 12px rgba(62, 224, 137, 0.5);
+        }
+
+        .gp-autoStatusReady {
+          margin-left: auto;
+          color: #3ee089;
+          font-weight: 800;
+          font-size: 13px;
+        }
+
+        .gp-adminRow {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+        }
+
+        .gp-bottomNav {
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          bottom: 12px;
+          z-index: 30;
+          display: none;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          padding: 8px;
+          border-radius: 18px;
+          background: rgba(0,0,0,0.55);
+          border: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(14px);
+          box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+        }
+
+        .gp-bottomItem {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          min-height: 56px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.04);
+          color: white;
+          font-size: 12px;
+        }
+
+        @media (max-width: 980px) {
+          .gp-topActions {
+            display: none;
+          }
+
+          .gp-menuBtn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .gp-mobileMenu {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(0,0,0,0.42);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(14px);
+          }
+
+          .gp-mobileMenu button {
+            text-align: left;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: white;
+          }
+
+          .gp-grid,
+          .gp-gridCalendar {
+            grid-template-columns: 1fr;
+          }
+
+          .gp-bottomNav {
+            display: grid;
+          }
+        }
+
+        @media (max-width: 680px) {
+          .gp-wrap {
+            padding: 12px 12px 92px;
+          }
+
+          .gp-topbar {
+            padding: 10px 12px;
+            border-radius: 18px;
+          }
+
+          .gp-logo {
+            height: 42px;
+          }
+
+          .gp-topTitle {
+            font-size: 16px;
+          }
+
+          .gp-topSub {
+            font-size: 12px;
+          }
+
+          .gp-card {
+            border-radius: 18px;
+            padding: 18px;
+          }
+
+          .gp-autoStatusReady {
+            margin-left: 0;
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
-const styles = `
-  .gp-page {
-    min-height: 100vh;
-    color: #eaf3ff;
-    background:
-      radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
-      radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
-      linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.92)),
-      url("/landing/hero-bg.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
-
-  .gp-page:before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: url("/landing/sparkles.png");
-    background-size: cover;
-    background-position: center;
-    opacity: 0.55;
-    mix-blend-mode: screen;
-  }
-
-  .gp-wrap {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 16px 16px 92px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .gp-topbar {
-    position: sticky;
-    top: 8px;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 12px 14px;
-    border-radius: 20px;
-    background: rgba(0, 0, 0, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(14px);
-  }
-
-  .gp-topbarLeft {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .gp-logo {
-    height: 52px;
-    width: auto;
-    display: block;
-    cursor: pointer;
-  }
-
-  .gp-topTitle {
-    font-size: 18px;
-    font-weight: 800;
-  }
-
-  .gp-topSub {
-    margin-top: 4px;
-    color: rgba(234, 243, 255, 0.72);
-    font-size: 13px;
-  }
-
-  .gp-topActions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .gp-menuBtn {
-    display: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.05);
-    color: white;
-    font-size: 20px;
-  }
-
-  .gp-mobileMenu {
-    display: none;
-  }
-
-  .gp-card {
-    border-radius: 22px;
-    background: rgba(0, 0, 0, 0.34);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(14px);
-    padding: 20px;
-  }
-
-  .gp-cardHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .gp-cardTitle {
-    font-size: 22px;
-    font-weight: 800;
-  }
-
-  .gp-cardMeta {
-    margin-top: 4px;
-    color: rgba(234,243,255,0.68);
-    font-size: 13px;
-  }
-
-  .gp-cardBody {
-    display: grid;
-    gap: 14px;
-  }
-
-  .gp-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .gp-gridCalendar {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 16px;
-  }
-
-  .gp-section {
-    border-radius: 16px;
-    padding: 14px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .gp-label {
-    color: rgba(234,243,255,0.84);
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  .gp-select,
-  .gp-input {
-    width: 100%;
-    padding: 13px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.10);
-    background: rgba(255,255,255,0.04);
-    color: white;
-    outline: none;
-  }
-
-  .gp-kv {
-    display: grid;
-    gap: 10px;
-  }
-
-  .gp-kvRow {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(0,0,0,0.24);
-    border: 1px solid rgba(255,255,255,0.06);
-    flex-wrap: wrap;
-  }
-
-  .gp-k {
-    color: rgba(234,243,255,0.66);
-  }
-
-  .gp-v {
-    font-weight: 800;
-  }
-
-  .gp-green {
-    color: var(--green, #3ee089);
-  }
-
-  .gp-red {
-    color: var(--red, #ff6b81);
-  }
-
-  .gp-help {
-    color: rgba(234,243,255,0.68);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  .gp-uploadBtn,
-  .gp-softBtn {
-    padding: 12px 16px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 800;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.05);
-    color: white;
-  }
-
-  .gp-summaryToggle {
-    cursor: pointer;
-    font-weight: 900;
-    list-style: none;
-  }
-
-  .gp-bottomNav {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    z-index: 30;
-    display: none;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding: 8px;
-    border-radius: 18px;
-    background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 18px 60px rgba(0,0,0,0.35);
-  }
-
-  .gp-bottomItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    min-height: 56px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.04);
-    color: white;
-    font-size: 12px;
-  }
-
-  @media (max-width: 980px) {
-    .gp-topActions {
-      display: none;
-    }
-
-    .gp-menuBtn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .gp-mobileMenu {
-      display: grid;
-      gap: 8px;
-      margin-top: 12px;
-      padding: 14px;
-      border-radius: 18px;
-      background: rgba(0,0,0,0.42);
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(14px);
-    }
-
-    .gp-mobileMenu button {
-      text-align: left;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: white;
-    }
-
-    .gp-grid,
-    .gp-gridCalendar {
-      grid-template-columns: 1fr;
-    }
-
-    .gp-bottomNav {
-      display: grid;
-    }
-  }
-
-  @media (max-width: 680px) {
-    .gp-wrap {
-      padding: 12px 12px 92px;
-    }
-
-    .gp-topbar {
-      padding: 10px 12px;
-      border-radius: 18px;
-    }
-
-    .gp-logo {
-      height: 42px;
-    }
-
-    .gp-topTitle {
-      font-size: 16px;
-    }
-
-    .gp-topSub {
-      font-size: 12px;
-    }
-
-    .gp-card {
-      border-radius: 18px;
-      padding: 18px;
-    }
-  }
-`;
