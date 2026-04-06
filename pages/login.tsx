@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getSupabaseClient } from "../lib/supabaseClient";
+
+const REMEMBER_EMAIL_KEY = "goldpulse_remember_email";
+const SAVED_EMAIL_KEY = "goldpulse_saved_email";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -9,9 +12,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY);
+
+    if (remembered === "true") {
+      setRememberMe(true);
+      if (savedEmail) setEmail(savedEmail);
+    } else {
+      setRememberMe(false);
+    }
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -27,9 +43,16 @@ export default function LoginPage() {
       });
 
       if (loginError) {
-        setLoading(false);
         setError(loginError.message);
         return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_EMAIL_KEY, "true");
+        localStorage.setItem(SAVED_EMAIL_KEY, cleanEmail);
+      } else {
+        localStorage.removeItem(REMEMBER_EMAIL_KEY);
+        localStorage.removeItem(SAVED_EMAIL_KEY);
       }
 
       const {
@@ -38,7 +61,6 @@ export default function LoginPage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setLoading(false);
         setError("No se pudo obtener el usuario.");
         return;
       }
@@ -50,7 +72,6 @@ export default function LoginPage() {
         .maybeSingle();
 
       if (existingProfileError) {
-        setLoading(false);
         setError(existingProfileError.message);
         return;
       }
@@ -64,7 +85,6 @@ export default function LoginPage() {
         });
 
         if (insertError) {
-          setLoading(false);
           setError(insertError.message);
           return;
         }
@@ -139,6 +159,15 @@ export default function LoginPage() {
             </button>
           </div>
 
+          <label style={rememberRow}>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Recordarme</span>
+          </label>
+
           <button type="submit" disabled={loading} style={goldBtn}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
@@ -187,6 +216,14 @@ const eyeBtn: React.CSSProperties = {
   background: "rgba(255,255,255,0.05)",
   color: "white",
   cursor: "pointer",
+};
+
+const rememberRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  color: "rgba(255,255,255,0.85)",
+  fontSize: 14,
 };
 
 const goldBtn: React.CSSProperties = {

@@ -25,7 +25,7 @@ export default function RegisterPage() {
       const cleanName = name.trim();
       const cleanEmail = email.trim().toLowerCase();
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -37,17 +37,30 @@ export default function RegisterPage() {
 
       if (signUpError) {
         setError(signUpError.message);
-        setLoading(false);
         return;
       }
 
-      setMessage(
-        "Cuenta creada correctamente. Revisa tu correo para confirmar el registro si tu proyecto tiene la verificación por email activada."
-      );
+      const user = signUpData.user;
+
+      if (user) {
+        const { error: upsertError } = await supabase.from("profiles").upsert({
+          id: user.id,
+          email: user.email ?? cleanEmail,
+          full_name: cleanName || null,
+          access_level: "free",
+        });
+
+        if (upsertError) {
+          setError(upsertError.message);
+          return;
+        }
+      }
+
+      setMessage("Cuenta creada correctamente. Ya puedes iniciar sesión.");
 
       setTimeout(() => {
         router.push("/login");
-      }, 1500);
+      }, 1200);
     } catch (err: any) {
       setError(err?.message || "Ocurrió un error al crear la cuenta.");
     } finally {
