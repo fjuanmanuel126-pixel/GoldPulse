@@ -60,9 +60,6 @@ export default function Home() {
             </p>
 
             <div className="lp-ctaRow">
-              <a className="lp-btnBlue" href="#planes">
-                Ver planes
-              </a>
               <Link className="lp-btnOutline" href="/login">
                 Ingresar
               </Link>
@@ -71,11 +68,11 @@ export default function Home() {
             <div className="lp-miniRow">
               <div className="lp-mini">
                 <div className="lp-dot" />
-                Señales IA · Multipar · Premium Dark UI
+                Señales premium con IA para oro, forex y BTC
               </div>
               <div className="lp-mini">
                 <div className="lp-dotBlue" />
-                Modo DARK · TradingView + Análisis
+                TradingView integrado y análisis operativo claro
               </div>
             </div>
 
@@ -234,7 +231,6 @@ export default function Home() {
         }
 
         .lp-btnGold,
-        .lp-btnBlue,
         .lp-btnOutline,
         .lp-cardBtn {
           text-decoration: none;
@@ -307,13 +303,6 @@ export default function Home() {
           flex-wrap: wrap;
         }
 
-        .lp-btnBlue {
-          padding: 11px 16px;
-          border: 1px solid rgba(120, 190, 255, 0.35);
-          background: linear-gradient(180deg, rgba(60, 160, 255, 0.35), rgba(0, 0, 0, 0.15));
-          color: rgba(220, 245, 255, 0.95);
-        }
-
         .lp-btnOutline {
           padding: 11px 16px;
           border: 1px solid rgba(255, 255, 255, 0.14);
@@ -345,6 +334,7 @@ export default function Home() {
           width: 10px;
           height: 10px;
           border-radius: 99px;
+          flex: 0 0 auto;
         }
 
         .lp-dot {
@@ -647,12 +637,8 @@ export default function Home() {
             font-size: 15px;
           }
 
-          .lp-ctaRow {
-            flex-direction: column;
-          }
-
           .lp-ctaRow a {
-            width: 100%;
+            width: auto;
           }
 
           .lp-orb {
