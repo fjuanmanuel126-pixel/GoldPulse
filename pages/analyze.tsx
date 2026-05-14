@@ -324,7 +324,7 @@ export default function Analyze() {
             <button type="button" className="gp-softBtn" onClick={() => router.push("/dashboard")}>
               Dashboard
             </button>
-            <button type="button" className="gp-softBtn" onClick={() => router.push("/diary")}>
+            <button type="button" className="gp-softBtn" onClick={() => router.push("/bitacora")}>
               Diario
             </button>
             <button type="button" className="gp-softBtn" onClick={() => router.push("/scalping-goldpulse")}>
@@ -350,7 +350,7 @@ export default function Analyze() {
           <div className="gp-mobileMenu">
             <button onClick={() => { setMenuOpen(false); router.push("/dashboard"); }}>Dashboard</button>
             <button onClick={() => { setMenuOpen(false); router.push("/analyze"); }}>Analyze</button>
-            <button onClick={() => { setMenuOpen(false); router.push("/diary"); }}>Diario</button>
+            <button onClick={() => { setMenuOpen(false); router.push("/diary"); }}>bitacora</button>
             <button onClick={() => { setMenuOpen(false); router.push("/scalping-goldpulse"); }}>Estrategia</button>
             <button onClick={() => { setMenuOpen(false); handleLogout(); }}>Cerrar sesión</button>
           </div>
