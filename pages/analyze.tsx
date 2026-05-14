@@ -375,7 +375,7 @@ export default function Analyze() {
                 <div className="gp-statValueSmall">{usageDisplay}</div>
               </div>
               <div className="gp-statBox">
-                <div className="gp-statLabel">Diario</div>
+                <div className="gp-statLabel">bitacora</div>
                 <div className="gp-statValueSmall">{journalCount} registros</div>
               </div>
             </div>
