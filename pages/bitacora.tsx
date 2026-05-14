@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import {
   LineChart,
   Line,
@@ -15,6 +17,7 @@ import {
   eachDayOfInterval,
   isSameDay,
 } from "date-fns";
+import { es } from "date-fns/locale";
 
 const balanceData = [
   { date: "2026-05-01", balance: 10000, equity: 10000 },
@@ -27,40 +30,14 @@ const balanceData = [
 ];
 
 const trades = [
-  {
-    id: 1,
-    date: "2026-05-02",
-    symbol: "XAUUSD",
-    type: "BUY",
-    entry: 2320,
-    lot: 0.1,
-    profit: 120,
-    note: "Buena entrada después de barrida de liquidez.",
-  },
-  {
-    id: 2,
-    date: "2026-05-03",
-    symbol: "NAS100",
-    type: "SELL",
-    entry: 18200,
-    lot: 0.05,
-    profit: -80,
-    note: "Entrada impulsiva, no esperé confirmación.",
-  },
-  {
-    id: 3,
-    date: "2026-05-05",
-    symbol: "XAUUSD",
-    type: "BUY",
-    entry: 2334,
-    lot: 0.12,
-    profit: 140,
-    note: "Trade limpio siguiendo estructura.",
-  },
+  { id: 1, date: "2026-05-02", symbol: "XAUUSD", type: "BUY", entry: 2320, lot: 0.1, profit: 120 },
+  { id: 2, date: "2026-05-03", symbol: "NAS100", type: "SELL", entry: 18200, lot: 0.05, profit: -80 },
+  { id: 3, date: "2026-05-05", symbol: "XAUUSD", type: "BUY", entry: 2334, lot: 0.12, profit: 140 },
 ];
 
-export default function Bitacora() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+export default function BitacoraPage() {
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState(new Date("2026-05-05"));
 
   const monthDays = useMemo(() => {
     return eachDayOfInterval({
@@ -73,81 +50,97 @@ export default function Bitacora() {
     isSameDay(new Date(trade.date), selectedDate)
   );
 
-  const totalProfit = trades.reduce((acc, trade) => acc + trade.profit, 0);
-  const wins = trades.filter((trade) => trade.profit > 0).length;
+  const totalProfit = trades.reduce((acc, t) => acc + t.profit, 0);
+  const wins = trades.filter((t) => t.profit > 0).length;
   const winrate = Math.round((wins / trades.length) * 100);
 
-  const getDayProfit = (day: Date) => {
+  function getDayProfit(day: Date) {
     return trades
       .filter((trade) => isSameDay(new Date(trade.date), day))
       .reduce((acc, trade) => acc + trade.profit, 0);
-  };
+  }
 
   return (
-    <main className="min-h-screen bg-[#050816] text-white px-6 py-8">
-      <section className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <p className="text-sm text-yellow-400 tracking-[0.3em] uppercase">
-            GoldPulse Journal PRO
-          </p>
-          <h1 className="text-4xl font-bold mt-2">Bitácora de Trading</h1>
-          <p className="text-slate-400 mt-2">
-            Controla tus operaciones, mide tu rendimiento y detecta tus errores.
-          </p>
-        </div>
+    <div className="db-page">
+      <div className="db-wrap">
+        <header className="db-topbar">
+          <div className="db-topbarLeft">
+            <Link href="/">
+              <img src="/branding/logo.png" alt="GoldPulse Pro" className="db-logo" />
+            </Link>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card title="Balance" value="$10,440" />
-          <Card title="Profit Total" value={`$${totalProfit}`} />
-          <Card title="Winrate" value={`${winrate}%`} />
-          <Card title="Trades" value={String(trades.length)} />
-        </div>
+            <div className="db-topInfo">
+              <div className="db-topTitle">Bitácora PRO</div>
+              <div className="db-topSub">Métricas · Calendario · Registro automático</div>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-5 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">Crecimiento de cuenta</h2>
+          <nav className="db-topActions">
+            <button onClick={() => router.push("/dashboard")} className="db-softBtn">Dashboard</button>
+            <button onClick={() => router.push("/analyze")} className="db-softBtn">Analyze</button>
+            <button onClick={() => router.push("/scalping-goldpulse")} className="db-softBtn">Estrategia</button>
+            <button onClick={() => router.push("/upgrade")} className="db-goldBtn">Upgrade</button>
+          </nav>
+        </header>
 
-            <div className="h-[320px]">
+        <section className="db-hero">
+          <div className="db-heroMain">
+            <div className="db-pill">BITÁCORA DE TRADING</div>
+            <h1 className="db-heroTitle">Controla tu rendimiento como trader</h1>
+            <p className="db-heroText">
+              Visualiza balance, equity, profit diario, calendario operativo y operaciones registradas.
+              Próximamente se conectará automáticamente con MT4/MT5.
+            </p>
+          </div>
+
+          <div className="db-heroSide">
+            <StatCard label="Balance" value="$10,440" />
+            <StatCard label="Profit total" value={`$${totalProfit}`} />
+            <StatCard label="Winrate" value={`${winrate}%`} />
+          </div>
+        </section>
+
+        <section className="db-mainGrid">
+          <div className="db-card">
+            <div className="db-cardHeader">
+              <div>
+                <div className="db-cardTitle">Crecimiento de cuenta</div>
+                <div className="db-cardMeta">Balance y equity</div>
+              </div>
+            </div>
+
+            <div className="chartBox">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={balanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="date" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="date" stroke="rgba(234,243,255,0.55)" />
+                  <YAxis stroke="rgba(234,243,255,0.55)" />
                   <Tooltip
                     contentStyle={{
-                      background: "#020617",
-                      border: "1px solid #334155",
-                      borderRadius: "12px",
-                      color: "white",
+                      background: "rgba(0,0,0,0.9)",
+                      border: "1px solid rgba(255,210,120,0.25)",
+                      borderRadius: "14px",
+                      color: "#fff",
                     }}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey="balance"
-                    stroke="#facc15"
-                    strokeWidth={3}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="equity"
-                    stroke="#38bdf8"
-                    strokeWidth={2}
-                    dot={false}
-                  />
+                  <Line type="monotone" dataKey="balance" stroke="#f6c453" strokeWidth={3} dot={false} />
+                  <Line type="monotone" dataKey="equity" stroke="#4db8ff" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">Calendario</h2>
+          <div className="db-card">
+            <div className="db-cardHeader">
+              <div>
+                <div className="db-cardTitle">Calendario</div>
+                <div className="db-cardMeta">{format(selectedDate, "MMMM 'de' yyyy", { locale: es })}</div>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-7 gap-2 text-center text-sm">
+            <div className="calendarGrid">
               {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
-                <div key={d} className="text-slate-400">
-                  {d}
-                </div>
+                <div key={d} className="calendarHead">{d}</div>
               ))}
 
               {monthDays.map((day) => {
@@ -158,91 +151,373 @@ export default function Bitacora() {
                   <button
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
-                    className={`
-                      rounded-xl h-14 border text-sm transition
-                      ${
-                        active
-                          ? "border-yellow-400 bg-yellow-400/20"
-                          : "border-white/10 bg-white/5"
-                      }
-                      ${
-                        profit > 0
-                          ? "text-emerald-400"
-                          : profit < 0
-                          ? "text-red-400"
-                          : "text-slate-400"
-                      }
-                    `}
+                    className={`calendarDay ${active ? "active" : ""} ${
+                      profit > 0 ? "win" : profit < 0 ? "loss" : ""
+                    }`}
                   >
-                    <div>{format(day, "d")}</div>
-                    {profit !== 0 && (
-                      <div className="text-xs">
-                        {profit > 0 ? "+" : ""}
-                        {profit}
-                      </div>
-                    )}
+                    <span>{format(day, "d")}</span>
+                    {profit !== 0 && <b>{profit > 0 ? "+" : ""}{profit}</b>}
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5 shadow-xl">
-          <h2 className="text-xl font-semibold mb-4">
-            Trades del {format(selectedDate, "dd/MM/yyyy")}
-          </h2>
+        <section className="db-card" style={{ marginTop: 18 }}>
+          <div className="db-cardHeader">
+            <div>
+              <div className="db-cardTitle">
+                Trades del {format(selectedDate, "dd/MM/yyyy")}
+              </div>
+              <div className="db-cardMeta">Registro operativo del día seleccionado</div>
+            </div>
+          </div>
 
           {selectedTrades.length === 0 ? (
-            <p className="text-slate-400">No hay operaciones este día.</p>
+            <div className="db-statusBox db-statusFree">No hay operaciones este día.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-slate-400 border-b border-white/10">
+            <div className="tableWrap">
+              <table>
+                <thead>
                   <tr>
-                    <th className="text-left py-3">Símbolo</th>
-                    <th className="text-left py-3">Tipo</th>
-                    <th className="text-left py-3">Entrada</th>
-                    <th className="text-left py-3">Lote</th>
-                    <th className="text-left py-3">Resultado</th>
-                    <th className="text-left py-3">Nota</th>
+                    <th>Símbolo</th>
+                    <th>Tipo</th>
+                    <th>Entrada</th>
+                    <th>Lote</th>
+                    <th>Resultado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedTrades.map((trade) => (
-                    <tr key={trade.id} className="border-b border-white/5">
-                      <td className="py-3">{trade.symbol}</td>
-                      <td className="py-3">{trade.type}</td>
-                      <td className="py-3">{trade.entry}</td>
-                      <td className="py-3">{trade.lot}</td>
-                      <td
-                        className={`py-3 font-semibold ${
-                          trade.profit >= 0
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {trade.profit > 0 ? "+" : ""}
-                        {trade.profit} USD
+                    <tr key={trade.id}>
+                      <td>{trade.symbol}</td>
+                      <td>{trade.type}</td>
+                      <td>{trade.entry}</td>
+                      <td>{trade.lot}</td>
+                      <td className={trade.profit >= 0 ? "profitWin" : "profitLoss"}>
+                        {trade.profit > 0 ? "+" : ""}{trade.profit} USD
                       </td>
-                      <td className="py-3 text-slate-300">{trade.note}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
-      </section>
-    </main>
-  );
-}
+        </section>
+      </div>
 
-function Card({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-xl">
-      <p className="text-slate-400 text-sm">{title}</p>
-      <h3 className="text-2xl font-bold mt-2">{value}</h3>
+      <style jsx>{styles}</style>
     </div>
   );
 }
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="db-statCard">
+      <div className="db-statLabel">{label}</div>
+      <div className="db-statValue">{value}</div>
+    </div>
+  );
+}
+
+const styles = `
+  .db-page {
+    min-height: 100vh;
+    color: #eaf3ff;
+    background:
+      radial-gradient(1200px 800px at 70% 35%, rgba(255, 190, 80, 0.12), transparent 60%),
+      radial-gradient(900px 600px at 30% 30%, rgba(60, 180, 255, 0.1), transparent 55%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.92)),
+      url("/landing/hero-bg.jpg");
+    background-size: cover;
+    background-position: center;
+  }
+
+  .db-page:before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: url("/landing/sparkles.png");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.55;
+    mix-blend-mode: screen;
+  }
+
+  .db-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 16px 16px 92px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .db-topbar {
+    position: sticky;
+    top: 8px;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+  }
+
+  .db-topbarLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .db-logo {
+    height: 52px;
+    width: auto;
+  }
+
+  .db-topTitle {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .db-topSub {
+    margin-top: 4px;
+    color: rgba(234, 243, 255, 0.72);
+    font-size: 13px;
+  }
+
+  .db-topActions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .db-softBtn,
+  .db-goldBtn {
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 800;
+    color: white;
+  }
+
+  .db-softBtn {
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .db-goldBtn {
+    border: 1px solid rgba(255,200,110,0.45);
+    background: linear-gradient(180deg, rgba(255,200,110,0.25), rgba(0,0,0,0.18));
+  }
+
+  .db-hero {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 16px;
+  }
+
+  .db-heroMain,
+  .db-card,
+  .db-statCard {
+    border-radius: 22px;
+    background: rgba(0, 0, 0, 0.34);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+  }
+
+  .db-heroMain,
+  .db-card {
+    padding: 24px;
+  }
+
+  .db-heroSide {
+    display: grid;
+    gap: 12px;
+  }
+
+  .db-pill {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 220, 160, 0.92);
+    background: rgba(255, 190, 80, 0.10);
+    border: 1px solid rgba(255, 210, 120, 0.18);
+  }
+
+  .db-heroTitle {
+    margin: 14px 0 0;
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 800;
+  }
+
+  .db-heroText {
+    margin-top: 14px;
+    color: rgba(234, 243, 255, 0.82);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  .db-statCard {
+    padding: 16px;
+  }
+
+  .db-statLabel {
+    color: rgba(234,243,255,0.68);
+    font-size: 13px;
+  }
+
+  .db-statValue {
+    margin-top: 8px;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .db-mainGrid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 0.9fr;
+    gap: 16px;
+  }
+
+  .db-cardHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .db-cardTitle {
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .db-cardMeta {
+    margin-top: 4px;
+    color: rgba(234,243,255,0.68);
+    font-size: 13px;
+  }
+
+  .chartBox {
+    height: 330px;
+  }
+
+  .calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  .calendarHead {
+    text-align: center;
+    color: rgba(234,243,255,0.58);
+    font-size: 13px;
+  }
+
+  .calendarDay {
+    height: 58px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: rgba(234,243,255,0.78);
+    cursor: pointer;
+  }
+
+  .calendarDay.active {
+    border-color: rgba(255,210,120,0.45);
+    background: rgba(255,190,80,0.13);
+  }
+
+  .calendarDay.win {
+    color: #4ade80;
+  }
+
+  .calendarDay.loss {
+    color: #fb7185;
+  }
+
+  .calendarDay b {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    color: rgba(234,243,255,0.62);
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  td {
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .profitWin {
+    color: #4ade80;
+    font-weight: 800;
+  }
+
+  .profitLoss {
+    color: #fb7185;
+    font-weight: 800;
+  }
+
+  .db-statusBox {
+    padding: 16px;
+    border-radius: 16px;
+    color: rgba(234,243,255,0.88);
+  }
+
+  .db-statusFree {
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+  }
+
+  @media (max-width: 980px) {
+    .db-topActions {
+      display: none;
+    }
+
+    .db-hero,
+    .db-mainGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .db-logo {
+      height: 42px;
+    }
+
+    .db-topInfo {
+      display: none;
+    }
+
+    .db-heroTitle {
+      font-size: 28px;
+    }
+
+    .db-heroMain,
+    .db-card {
+      padding: 18px;
+    }
+  }
+`;
