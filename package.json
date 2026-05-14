@@ -11,10 +11,12 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
+    "date-fns": "^4.1.0",
     "formidable": "^3.5.2",
     "next": "16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.8.1",
     "stripe": "^22.0.0"
   },
   "devDependencies": {
