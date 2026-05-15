@@ -249,21 +249,27 @@ function sanitizeMomentum(agent: AgentOutput, currentPrice: number): FlashSignal
   };
 }
 
-function extractJson(text: string): AgentOutput {
-  const trimmed = text.trim();
+function parseAgentJson(outputText: string): AgentOutput {
+  let cleaned = outputText.trim();
+
+  cleaned = cleaned
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
 
   try {
-    return JSON.parse(trimmed);
-  } catch {
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-
-    if (start >= 0 && end > start) {
-      const maybe = trimmed.slice(start, end + 1);
-      return JSON.parse(maybe);
-    }
-
-    throw new Error("No se pudo extraer JSON de la respuesta del modelo.");
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.error("JSON INVALIDO DEL MODELO:");
+    console.log(cleaned);
+    throw new Error("El modelo devolvió JSON inválido.");
   }
 }
 
@@ -341,6 +347,7 @@ export default async function handler(
 
     const rawCurrentPrice = firstField(fields.currentPrice);
     const parsedCurrentPrice = Number(rawCurrentPrice);
+
     const hasValidCurrentPrice =
       rawCurrentPrice !== "" &&
       Number.isFinite(parsedCurrentPrice) &&
@@ -366,7 +373,6 @@ export default async function handler(
     }
 
     const currentPrice = hasValidCurrentPrice ? parsedCurrentPrice : 0;
-
     const imageDataUrls = uploadedImages.map(fileToDataUrl);
 
     const userPrompt = `
@@ -425,12 +431,14 @@ Necesito exactamente esta estructura:
 
 Reglas:
 - Responde solo con JSON.
+- Todas las propiedades deben ir entre comillas dobles.
+- No uses comentarios dentro del JSON.
+- No uses markdown.
 - premium y momentum deben existir siempre.
 - side solo puede ser BUY o SELL.
 - confidence entre 1 y 100.
 - Si currentPrice existe, úsalo como referencia para el scalp.
 - Si currentPrice no existe, usa el gráfico para estimar la entrada.
-- No incluyas markdown.
 `;
 
     const inputContent: any[] = [
@@ -465,6 +473,11 @@ Reglas:
           content: inputContent,
         },
       ],
+      text: {
+        format: {
+          type: "json_object",
+        },
+      },
     };
 
     const openaiRes = await fetch("https://api.openai.com/v1/responses", {
@@ -525,7 +538,21 @@ Reglas:
       });
     }
 
-    const agent = extractJson(outputText);
+    let agent: AgentOutput;
+
+    try {
+      agent = parseAgentJson(outputText);
+    } catch (err: any) {
+      return res.status(500).json({
+        error: err?.message || "El modelo devolvió JSON inválido.",
+        meta: {
+          usedToday: usage.usedToday,
+          remaining: usage.remaining,
+          limit: usage.limit,
+          dateKey: usage.dateKey,
+        },
+      });
+    }
 
     const premium = sanitizePremium(agent);
     const momentum = sanitizeMomentum(agent, currentPrice);
