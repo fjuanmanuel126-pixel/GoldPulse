@@ -173,7 +173,6 @@ export default function Analyze() {
     }
 
     setLoading(true);
-
     try {
       const supabase = getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -291,7 +290,6 @@ export default function Analyze() {
             background-position: center;
             background-repeat: no-repeat;
           }
-
           .gp-loading {
             font-size: 18px;
           }
@@ -326,15 +324,12 @@ export default function Analyze() {
             <button type="button" className="gp-softBtn" onClick={() => router.push("/dashboard")}>
               Dashboard
             </button>
-
             <button type="button" className="gp-softBtn" onClick={() => router.push("/diary")}>
               Diario
             </button>
-
-            <button type="button" className="gp-softBtn" onClick={() => router.push("/upgrade")}>
-              Upgrade
+            <button type="button" className="gp-softBtn" onClick={() => router.push("/scalping-goldpulse")}>
+              Estrategia
             </button>
-
             <button type="button" className="gp-goldBtn" onClick={handleLogout}>
               Cerrar sesión
             </button>
@@ -356,7 +351,7 @@ export default function Analyze() {
             <button onClick={() => { setMenuOpen(false); router.push("/dashboard"); }}>Dashboard</button>
             <button onClick={() => { setMenuOpen(false); router.push("/analyze"); }}>Analyze</button>
             <button onClick={() => { setMenuOpen(false); router.push("/diary"); }}>Diario</button>
-            <button onClick={() => { setMenuOpen(false); router.push("/upgrade"); }}>Upgrade</button>
+            <button onClick={() => { setMenuOpen(false); router.push("/scalping-goldpulse"); }}>Estrategia</button>
             <button onClick={() => { setMenuOpen(false); handleLogout(); }}>Cerrar sesión</button>
           </div>
         )}
@@ -375,12 +370,10 @@ export default function Analyze() {
                 <div className="gp-statLabel">Nivel</div>
                 <div className="gp-statValue">{accessLevel ? accessLevel.toUpperCase() : "—"}</div>
               </div>
-
               <div className="gp-statBox">
                 <div className="gp-statLabel">Uso hoy</div>
                 <div className="gp-statValueSmall">{usageDisplay}</div>
               </div>
-
               <div className="gp-statBox">
                 <div className="gp-statLabel">Diario</div>
                 <div className="gp-statValueSmall">{journalCount} registros</div>
@@ -545,15 +538,17 @@ export default function Analyze() {
             <span>🏠</span>
             <span>Dashboard</span>
           </button>
-
           <button onClick={() => router.push("/analyze")} className="gp-bottomItem">
             <span>📈</span>
             <span>Analyze</span>
           </button>
-
           <button onClick={() => router.push("/diary")} className="gp-bottomItem">
             <span>📘</span>
             <span>Diario</span>
+          </button>
+          <button onClick={() => router.push("/scalping-goldpulse")} className="gp-bottomItem">
+            <span>⚡</span>
+            <span>Estrategia</span>
           </button>
         </section>
       </div>
@@ -842,8 +837,7 @@ export default function Analyze() {
         .gp-uploadBtn,
         .gp-softBtn,
         .gp-goldBtn,
-        .gp-btnPrimary,
-        .gp-copyBtn {
+        .gp-btnPrimary {
           padding: 12px 16px;
           border-radius: 12px;
           cursor: pointer;
@@ -854,14 +848,12 @@ export default function Analyze() {
         .gp-uploadBtn:hover,
         .gp-softBtn:hover,
         .gp-goldBtn:hover,
-        .gp-btnPrimary:hover,
-        .gp-copyBtn:hover {
+        .gp-btnPrimary:hover {
           transform: translateY(-1px);
         }
 
         .gp-softBtn,
-        .gp-uploadBtn,
-        .gp-copyBtn {
+        .gp-uploadBtn {
           border: 1px solid rgba(255,255,255,0.12);
           background: rgba(255,255,255,0.05);
           color: white;
@@ -880,6 +872,13 @@ export default function Analyze() {
           box-shadow:
             0 12px 28px rgba(255, 190, 80, 0.22),
             inset 0 1px 0 rgba(255,255,255,0.28);
+        }
+
+        .gp-btnPrimary:hover {
+          transform: translateY(-1px);
+          box-shadow:
+            0 16px 34px rgba(255, 190, 80, 0.30),
+            inset 0 1px 0 rgba(255,255,255,0.32);
         }
 
         .gp-btnPrimary:disabled {
@@ -909,6 +908,18 @@ export default function Analyze() {
           font-size: 14px;
         }
 
+        .gp-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          font-size: 13px;
+          font-weight: 800;
+        }
+
         .gp-bigConf {
           font-size: 28px;
           font-weight: 900;
@@ -936,8 +947,12 @@ export default function Analyze() {
           font-size: 14px;
         }
 
+        .gp-green {
+          color: var(--green, #3ee089);
+        }
+
         .gp-red {
-          color: #ff6b81;
+          color: var(--red, #ff6b81);
         }
 
         .gp-sections {
@@ -988,12 +1003,14 @@ export default function Analyze() {
           color: #8df2d1;
           background: rgba(62, 224, 137, 0.12);
           border: 1px solid rgba(62, 224, 137, 0.26);
+          box-shadow: 0 0 18px rgba(62, 224, 137, 0.1);
         }
 
         .gp-sideBadgeSell {
           color: #ffb1bc;
           background: rgba(255, 107, 129, 0.12);
           border: 1px solid rgba(255, 107, 129, 0.26);
+          box-shadow: 0 0 18px rgba(255, 107, 129, 0.1);
         }
 
         .gp-sideDot {
@@ -1001,6 +1018,22 @@ export default function Analyze() {
           height: 8px;
           border-radius: 50%;
           background: currentColor;
+        }
+
+        .gp-copyBtn {
+          border: 1px solid rgba(255,255,255,0.10);
+          background: rgba(255,255,255,0.05);
+          color: white;
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: transform 0.18s ease, background 0.18s ease;
+        }
+
+        .gp-copyBtn:hover {
+          transform: translateY(-1px);
+          background: rgba(255,255,255,0.08);
         }
 
         .gp-biasCard {
@@ -1035,6 +1068,7 @@ export default function Analyze() {
           border-radius: 18px;
           background: rgba(255,255,255,0.035);
           border: 1px solid rgba(255,255,255,0.07);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
         }
 
         .gp-mainStatLabel {
@@ -1055,10 +1089,16 @@ export default function Analyze() {
 
         .gp-mainStatEntry {
           border: 1px solid rgba(73, 194, 255, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.03),
+            0 10px 24px rgba(73, 194, 255, 0.08);
         }
 
         .gp-mainStatSl {
           border: 1px solid rgba(255, 107, 129, 0.18);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.03),
+            0 10px 24px rgba(255, 107, 129, 0.08);
         }
 
         .gp-tpWrap {
@@ -1082,14 +1122,20 @@ export default function Analyze() {
         }
 
         .gp-tpBtn {
+          position: relative;
+          overflow: hidden;
           min-height: 92px;
           padding: 14px;
           border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.04);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           text-align: left;
+          box-shadow:
+            0 14px 32px rgba(0,0,0,0.18),
+            inset 0 1px 0 rgba(255,255,255,0.03);
         }
 
         .gp-tpBtn span {
@@ -1110,18 +1156,27 @@ export default function Analyze() {
           color: #7ed8ff;
           background: linear-gradient(180deg, rgba(26, 49, 80, 0.95), rgba(11, 22, 40, 0.96));
           border-color: rgba(92, 191, 255, 0.24);
+          box-shadow:
+            0 14px 32px rgba(55, 148, 255, 0.14),
+            inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .gp-tp2 {
           color: #86f1ce;
           background: linear-gradient(180deg, rgba(18, 63, 54, 0.95), rgba(9, 31, 26, 0.96));
           border-color: rgba(62, 224, 137, 0.24);
+          box-shadow:
+            0 14px 32px rgba(62, 224, 137, 0.12),
+            inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .gp-tp3 {
           color: #ffd87d;
           background: linear-gradient(180deg, rgba(74, 57, 19, 0.95), rgba(34, 24, 7, 0.96));
           border-color: rgba(255, 204, 107, 0.24);
+          box-shadow:
+            0 14px 32px rgba(255, 204, 107, 0.12),
+            inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .gp-bottomNav {
@@ -1131,7 +1186,7 @@ export default function Analyze() {
           bottom: 12px;
           z-index: 30;
           display: none;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 8px;
           padding: 8px;
           border-radius: 18px;
@@ -1333,9 +1388,7 @@ function ResultCard(props: {
         <div>
           <div className="gp-cardTitle">{props.title}</div>
           <div className="gp-cardMeta">
-            {props.variant === "premium"
-              ? "Señal institucional · Alta probabilidad"
-              : "Señal Flash · Ejecución rápida"}
+            {props.variant === "premium" ? "Señal institucional · Alta probabilidad" : "Señal Flash · Ejecución rápida"}
           </div>
         </div>
 
@@ -1418,14 +1471,12 @@ function ResultCard(props: {
               <div className="gp-sectionText">{props.sections.technical}</div>
             </div>
           )}
-
           {props.sections?.fundamental && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Análisis Fundamental</div>
               <div className="gp-sectionText">{props.sections.fundamental}</div>
             </div>
           )}
-
           {props.sections?.sentiment && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Sentimiento del Mercado</div>
