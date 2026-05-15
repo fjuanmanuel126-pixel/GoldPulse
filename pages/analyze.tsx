@@ -208,6 +208,7 @@ export default function Analyze() {
             </Link>
 
             <div className="gp-topInfo">
+
               <div className="gp-topTitle">
                 Analyze
               </div>
@@ -215,6 +216,7 @@ export default function Analyze() {
               <div className="gp-topSub">
                 Panel premium de análisis
               </div>
+
             </div>
 
           </div>
@@ -495,7 +497,37 @@ export default function Analyze() {
 
         </div>
 
-        {/* MOBILE NAV */}
+        {/* RESULTADOS */}
+
+        {premium && (
+          <ResultCard
+            title={premium.title}
+            side={premium.side}
+            confidence={premium.confidence}
+            entry={premium.entry}
+            sl={premium.sl}
+            tp1={premium.tp1}
+            tp2={premium.tp2}
+            tp3={premium.tp3}
+            rationale={premium.rationale}
+          />
+        )}
+
+        {flash && (
+          <ResultCard
+            title={flash.title}
+            side={flash.side}
+            confidence={flash.confidence}
+            entry={String(flash.entry)}
+            sl={flash.sl}
+            tp1={flash.tp1}
+            tp2={flash.tp2}
+            tp3={flash.tp3}
+            rationale={flash.rationale}
+          />
+        )}
+
+        {/* BOTTOM NAV WEB + MOBILE */}
 
         <section className="gp-bottomNav">
 
@@ -554,16 +586,17 @@ export default function Analyze() {
           background:
             linear-gradient(
               rgba(0,0,0,.7),
-              rgba(0,0,0,.9)
+              rgba(0,0,0,.92)
             ),
             url("/landing/hero-bg.jpg");
           background-size: cover;
+          background-position: center;
         }
 
         .gp-wrap {
           max-width: 1200px;
           margin: auto;
-          padding: 16px;
+          padding: 16px 16px 100px;
         }
 
         .gp-topbar {
@@ -584,6 +617,16 @@ export default function Analyze() {
 
         .gp-logo {
           height: 52px;
+        }
+
+        .gp-topTitle {
+          font-size: 18px;
+          font-weight: 800;
+        }
+
+        .gp-topSub {
+          font-size: 13px;
+          opacity: .7;
         }
 
         .gp-topActions {
@@ -614,6 +657,40 @@ export default function Analyze() {
           color: black;
         }
 
+        .gp-menuBtn {
+          display: none;
+        }
+
+        .gp-mobileMenu {
+          display: none;
+        }
+
+        .gp-heroCard,
+        .gp-card {
+          margin-top: 18px;
+          padding: 22px;
+          border-radius: 22px;
+          background: rgba(255,255,255,.05);
+          backdrop-filter: blur(14px);
+        }
+
+        .gp-pill {
+          display: inline-block;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: rgba(245,191,84,.15);
+          color: #f5bf54;
+          font-size: 12px;
+        }
+
+        .gp-heroTitle {
+          font-size: 42px;
+        }
+
+        .gp-heroText {
+          opacity: .8;
+        }
+
         .gp-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -621,13 +698,25 @@ export default function Analyze() {
           margin-top: 18px;
         }
 
-        .gp-card,
-        .gp-heroCard {
-          margin-top: 18px;
-          padding: 22px;
-          border-radius: 22px;
-          background: rgba(255,255,255,.05);
-          backdrop-filter: blur(14px);
+        .gp-cardHeader {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 14px;
+        }
+
+        .gp-cardTitle {
+          font-size: 22px;
+          font-weight: 800;
+        }
+
+        .gp-cardMeta {
+          opacity: .7;
+          font-size: 13px;
+        }
+
+        .gp-chartWrap {
+          overflow: hidden;
+          border-radius: 18px;
         }
 
         .gp-tvFrame {
@@ -657,16 +746,46 @@ export default function Analyze() {
           color: white;
         }
 
-        .gp-bottomNav {
-          display: none;
+        .gp-uploadRow {
+          display: flex;
+          gap: 10px;
+          align-items: center;
         }
 
-        .gp-menuBtn {
-          display: none;
+        .gp-error {
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255,0,0,.15);
         }
 
-        .gp-mobileMenu {
-          display: none;
+        .gp-bottomNav{
+          position:fixed;
+          left:12px;
+          right:12px;
+          bottom:12px;
+          z-index:50;
+          display:grid;
+          grid-template-columns:repeat(3,1fr);
+          gap:8px;
+          padding:8px;
+          border-radius:18px;
+          background:rgba(0,0,0,.6);
+          backdrop-filter:blur(14px);
+          border:1px solid rgba(255,255,255,.08);
+        }
+
+        .gp-bottomItem{
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:4px;
+          min-height:58px;
+          border:none;
+          border-radius:14px;
+          background:rgba(255,255,255,.06);
+          color:white;
+          cursor:pointer;
         }
 
         @media(max-width:980px){
@@ -698,36 +817,76 @@ export default function Analyze() {
             grid-template-columns:1fr;
           }
 
-          .gp-bottomNav{
-            position:fixed;
-            left:12px;
-            right:12px;
-            bottom:12px;
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:8px;
-            padding:8px;
-            border-radius:18px;
-            background:rgba(0,0,0,.6);
-            backdrop-filter:blur(14px);
-          }
-
-          .gp-bottomItem{
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            gap:4px;
-            min-height:58px;
-            border:none;
-            border-radius:14px;
-            background:rgba(255,255,255,.06);
-            color:white;
+          .gp-heroTitle{
+            font-size:30px;
           }
 
         }
       `}</style>
 
+    </div>
+  );
+}
+
+function ResultCard(props: {
+  title: string;
+  side: "BUY" | "SELL";
+  confidence: number;
+  entry: string;
+  sl: number;
+  tp1?: number;
+  tp2?: number;
+  tp3?: number;
+  rationale: string;
+}) {
+  return (
+    <div className="gp-card">
+
+      <div className="gp-cardHeader">
+
+        <div>
+
+          <div className="gp-cardTitle">
+            {props.title}
+          </div>
+
+          <div className="gp-cardMeta">
+            Señal IA
+          </div>
+
+        </div>
+
+        <div>
+          {props.side}
+        </div>
+
+      </div>
+
+      <div className="gp-form">
+
+        <div>
+          Confianza: {props.confidence}%
+        </div>
+
+        <div>
+          Entrada: {props.entry}
+        </div>
+
+        <div>
+          SL: {props.sl}
+        </div>
+
+        {props.tp1 && <div>TP1: {props.tp1}</div>}
+
+        {props.tp2 && <div>TP2: {props.tp2}</div>}
+
+        {props.tp3 && <div>TP3: {props.tp3}</div>}
+
+        <div>
+          {props.rationale}
+        </div>
+
+      </div>
     </div>
   );
 }
