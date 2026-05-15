@@ -39,21 +39,17 @@ type FlashSignal = {
   rationale: string;
 };
 
-type ApiMeta = {
-  usedToday: number;
-  remaining: number;
-  limit: number;
-};
-
 type AccessLevel = "free" | "premium" | "vip" | "admin";
 
 export default function Analyze() {
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
-  const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [accessLevel, setAccessLevel] =
+    useState<AccessLevel | null>(null);
 
   const [symbol, setSymbol] = useState(SYMBOLS[0]);
 
@@ -62,19 +58,20 @@ export default function Analyze() {
 
   const [currentPrice, setCurrentPrice] = useState("");
 
-  const [fileName, setFileName] = useState("No has subido imagen");
+  const [premium, setPremium] =
+    useState<PremiumSignal | null>(null);
 
-  const [file, setFile] = useState<File | null>(null);
+  const [flash, setFlash] =
+    useState<FlashSignal | null>(null);
 
   const [loading, setLoading] = useState(false);
 
-  const [premium, setPremium] = useState<PremiumSignal | null>(null);
-
-  const [flash, setFlash] = useState<FlashSignal | null>(null);
-
-  const [meta, setMeta] = useState<ApiMeta | null>(null);
-
   const [error, setError] = useState("");
+
+  const [fileName, setFileName] =
+    useState("No has subido imagen");
+
+  const [file, setFile] = useState<File | null>(null);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -95,7 +92,8 @@ export default function Analyze() {
         .eq("id", data.user.id)
         .single();
 
-      const level = (profile?.access_level || "free") as AccessLevel;
+      const level = (profile?.access_level ||
+        "free") as AccessLevel;
 
       setAccessLevel(level);
 
@@ -120,7 +118,6 @@ export default function Analyze() {
     if (timeframe === "15m") return "15";
     if (timeframe === "1h") return "60";
     if (timeframe === "4h") return "240";
-
     return "D";
   }, [timeframe]);
 
@@ -169,8 +166,6 @@ export default function Analyze() {
       setPremium(j.premium || null);
 
       setFlash(j.momentum || null);
-
-      setMeta(j.meta || null);
     } catch (e: any) {
       setError(e.message || "Error");
     } finally {
@@ -201,7 +196,9 @@ export default function Analyze() {
         {/* TOPBAR */}
 
         <div className="gp-topbar">
+
           <div className="gp-topbarLeft">
+
             <Link href="/">
               <img
                 src="/branding/logo.png"
@@ -211,36 +208,35 @@ export default function Analyze() {
             </Link>
 
             <div className="gp-topInfo">
-              <div className="gp-topTitle">Analyze</div>
+              <div className="gp-topTitle">
+                Analyze
+              </div>
 
               <div className="gp-topSub">
                 Panel premium de análisis
               </div>
             </div>
+
           </div>
 
           <nav className="gp-topActions">
+
             <button
               className="gp-softBtn"
-              onClick={() => router.push("/dashboard")}
+              onClick={() =>
+                router.push("/dashboard")
+              }
             >
               Dashboard
             </button>
 
             <button
               className="gp-softBtn"
-              onClick={() => router.push("/bitacora")}
-            >
-              Bitácora
-            </button>
-
-            <button
-              className="gp-softBtn"
               onClick={() =>
-                router.push("/scalping-goldpulse")
+                router.push("/bitacora")
               }
             >
-              Estrategia
+              Bitácora
             </button>
 
             <button
@@ -249,14 +245,18 @@ export default function Analyze() {
             >
               Cerrar sesión
             </button>
+
           </nav>
 
           <button
             className="gp-menuBtn"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() =>
+              setMenuOpen(!menuOpen)
+            }
           >
             ☰
           </button>
+
         </div>
 
         {/* MOBILE MENU */}
@@ -291,20 +291,13 @@ export default function Analyze() {
               Bitácora
             </button>
 
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                router.push("/scalping-goldpulse");
-              }}
-            >
-              Estrategia
-            </button>
           </div>
         )}
 
         {/* HERO */}
 
         <section className="gp-hero">
+
           <div className="gp-heroCard">
 
             <div className="gp-pill">
@@ -319,42 +312,8 @@ export default function Analyze() {
               Selecciona símbolo, timeframe y precio.
             </p>
 
-            <div className="gp-quickStats">
-
-              <div className="gp-statBox">
-                <div className="gp-statLabel">
-                  Nivel
-                </div>
-
-                <div className="gp-statValue">
-                  {accessLevel}
-                </div>
-              </div>
-
-              <div className="gp-statBox">
-                <div className="gp-statLabel">
-                  Uso hoy
-                </div>
-
-                <div className="gp-statValue">
-                  {meta
-                    ? `${meta.usedToday}/${meta.limit}`
-                    : "—"}
-                </div>
-              </div>
-
-              <div className="gp-statBox">
-                <div className="gp-statLabel">
-                  Bitácora
-                </div>
-
-                <div className="gp-statValue">
-                  PRO
-                </div>
-              </div>
-
-            </div>
           </div>
+
         </section>
 
         {/* GRID */}
@@ -368,6 +327,7 @@ export default function Analyze() {
             <div className="gp-cardHeader">
 
               <div>
+
                 <div className="gp-cardTitle">
                   TradingView
                 </div>
@@ -375,10 +335,7 @@ export default function Analyze() {
                 <div className="gp-cardMeta">
                   {symbol} · {timeframe}
                 </div>
-              </div>
 
-              <div className="gp-livePill">
-                Live
               </div>
 
             </div>
@@ -394,29 +351,17 @@ export default function Analyze() {
               />
 
             </div>
+
           </div>
 
           {/* RIGHT */}
 
           <div className="gp-card">
 
-            <div className="gp-cardHeader">
-
-              <div>
-                <div className="gp-cardTitle">
-                  Generador IA
-                </div>
-
-                <div className="gp-cardMeta">
-                  Premium + Scalp
-                </div>
-              </div>
-
-            </div>
-
             <div className="gp-form">
 
               <div>
+
                 <div className="gp-label">
                   Símbolo
                 </div>
@@ -429,16 +374,18 @@ export default function Analyze() {
                   }
                 >
                   {SYMBOLS.map((s) => (
-                    <option key={s} value={s}>
+                    <option key={s}>
                       {s}
                     </option>
                   ))}
                 </select>
+
               </div>
 
               <div className="gp-row2">
 
                 <div>
+
                   <div className="gp-label">
                     Timeframe
                   </div>
@@ -447,18 +394,22 @@ export default function Analyze() {
                     className="gp-select"
                     value={timeframe}
                     onChange={(e) =>
-                      setTimeframe(e.target.value as any)
+                      setTimeframe(
+                        e.target.value as any
+                      )
                     }
                   >
                     {TIMEFRAMES.map((t) => (
-                      <option key={t} value={t}>
+                      <option key={t}>
                         {t}
                       </option>
                     ))}
                   </select>
+
                 </div>
 
                 <div>
+
                   <div className="gp-label">
                     Precio actual
                   </div>
@@ -467,9 +418,12 @@ export default function Analyze() {
                     className="gp-input"
                     value={currentPrice}
                     onChange={(e) =>
-                      setCurrentPrice(e.target.value)
+                      setCurrentPrice(
+                        e.target.value
+                      )
                     }
                   />
+
                 </div>
 
               </div>
@@ -489,7 +443,8 @@ export default function Analyze() {
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const f =
-                        e.target.files?.[0] || null;
+                        e.target.files?.[0] ||
+                        null;
 
                       setFile(f);
 
@@ -515,6 +470,7 @@ export default function Analyze() {
                   </div>
 
                 </div>
+
               </div>
 
               <button
@@ -534,46 +490,19 @@ export default function Analyze() {
               )}
 
             </div>
+
           </div>
 
         </div>
 
-        {/* RESULTADOS */}
-
-        {premium && (
-          <ResultCard
-            title={premium.title}
-            side={premium.side}
-            confidence={premium.confidence}
-            entry={premium.entry}
-            sl={premium.sl}
-            tp1={premium.tp1}
-            tp2={premium.tp2}
-            tp3={premium.tp3}
-            rationale={premium.rationale}
-          />
-        )}
-
-        {flash && (
-          <ResultCard
-            title={flash.title}
-            side={flash.side}
-            confidence={flash.confidence}
-            entry={String(flash.entry)}
-            sl={flash.sl}
-            tp1={flash.tp1}
-            tp2={flash.tp2}
-            tp3={flash.tp3}
-            rationale={flash.rationale}
-          />
-        )}
-
-        {/* BOTTOM NAV */}
+        {/* MOBILE NAV */}
 
         <section className="gp-bottomNav">
 
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() =>
+              router.push("/dashboard")
+            }
             className="gp-bottomItem"
           >
             <span>🏠</span>
@@ -581,7 +510,9 @@ export default function Analyze() {
           </button>
 
           <button
-            onClick={() => router.push("/analyze")}
+            onClick={() =>
+              router.push("/analyze")
+            }
             className="gp-bottomItem"
           >
             <span>📈</span>
@@ -589,24 +520,17 @@ export default function Analyze() {
           </button>
 
           <button
-            onClick={() => router.push("/bitacora")}
+            onClick={() =>
+              router.push("/bitacora")
+            }
             className="gp-bottomItem"
           >
             <span>📒</span>
             <span>Bitácora</span>
           </button>
 
-          <button
-            onClick={() =>
-              router.push("/scalping-goldpulse")
-            }
-            className="gp-bottomItem"
-          >
-            <span>⚡</span>
-            <span>Estrategia</span>
-          </button>
-
         </section>
+
       </div>
 
       <style jsx global>{`
@@ -628,7 +552,10 @@ export default function Analyze() {
           min-height: 100vh;
           color: white;
           background:
-            linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.9)),
+            linear-gradient(
+              rgba(0,0,0,.7),
+              rgba(0,0,0,.9)
+            ),
             url("/landing/hero-bg.jpg");
           background-size: cover;
         }
@@ -659,16 +586,6 @@ export default function Analyze() {
           height: 52px;
         }
 
-        .gp-topTitle {
-          font-size: 18px;
-          font-weight: 800;
-        }
-
-        .gp-topSub {
-          font-size: 13px;
-          opacity: .7;
-        }
-
         .gp-topActions {
           display: flex;
           gap: 10px;
@@ -697,49 +614,6 @@ export default function Analyze() {
           color: black;
         }
 
-        .gp-menuBtn {
-          display: none;
-        }
-
-        .gp-mobileMenu {
-          display: none;
-        }
-
-        .gp-heroCard,
-        .gp-card {
-          margin-top: 18px;
-          padding: 22px;
-          border-radius: 22px;
-          background: rgba(255,255,255,.05);
-          backdrop-filter: blur(14px);
-        }
-
-        .gp-pill {
-          display: inline-block;
-          padding: 8px 12px;
-          border-radius: 999px;
-          background: rgba(245,191,84,.15);
-          color: #f5bf54;
-          font-size: 12px;
-        }
-
-        .gp-heroTitle {
-          font-size: 42px;
-        }
-
-        .gp-quickStats {
-          display: grid;
-          grid-template-columns: repeat(3,1fr);
-          gap: 12px;
-          margin-top: 18px;
-        }
-
-        .gp-statBox {
-          padding: 16px;
-          border-radius: 18px;
-          background: rgba(255,255,255,.05);
-        }
-
         .gp-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -747,15 +621,13 @@ export default function Analyze() {
           margin-top: 18px;
         }
 
-        .gp-cardHeader {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 14px;
-        }
-
-        .gp-chartWrap {
-          overflow: hidden;
-          border-radius: 18px;
+        .gp-card,
+        .gp-heroCard {
+          margin-top: 18px;
+          padding: 22px;
+          border-radius: 22px;
+          background: rgba(255,255,255,.05);
+          backdrop-filter: blur(14px);
         }
 
         .gp-tvFrame {
@@ -785,39 +657,35 @@ export default function Analyze() {
           color: white;
         }
 
-        .gp-uploadRow {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-        }
-
-        .gp-error {
-          background: rgba(255,0,0,.15);
-          padding: 12px;
-          border-radius: 12px;
-        }
-
         .gp-bottomNav {
+          display: none;
+        }
+
+        .gp-menuBtn {
+          display: none;
+        }
+
+        .gp-mobileMenu {
           display: none;
         }
 
         @media(max-width:980px){
 
-          .gp-topActions {
+          .gp-topActions{
             display:none;
           }
 
-          .gp-menuBtn {
+          .gp-menuBtn{
             display:block;
           }
 
-          .gp-mobileMenu {
+          .gp-mobileMenu{
             display:grid;
             gap:8px;
             margin-top:12px;
           }
 
-          .gp-mobileMenu button {
+          .gp-mobileMenu button{
             padding:14px;
             border:none;
             border-radius:12px;
@@ -826,18 +694,17 @@ export default function Analyze() {
           }
 
           .gp-grid,
-          .gp-row2,
-          .gp-quickStats {
+          .gp-row2{
             grid-template-columns:1fr;
           }
 
-          .gp-bottomNav {
+          .gp-bottomNav{
             position:fixed;
             left:12px;
             right:12px;
             bottom:12px;
             display:grid;
-            grid-template-columns:repeat(4,1fr);
+            grid-template-columns:repeat(3,1fr);
             gap:8px;
             padding:8px;
             border-radius:18px;
@@ -845,82 +712,22 @@ export default function Analyze() {
             backdrop-filter:blur(14px);
           }
 
-          .gp-bottomItem {
+          .gp-bottomItem{
             display:flex;
             flex-direction:column;
             align-items:center;
             justify-content:center;
             gap:4px;
+            min-height:58px;
             border:none;
             border-radius:14px;
-            min-height:58px;
             background:rgba(255,255,255,.06);
             color:white;
           }
 
         }
       `}</style>
-    </div>
-  );
-}
 
-function ResultCard(props: {
-  title: string;
-  side: "BUY" | "SELL";
-  confidence: number;
-  entry: string;
-  sl: number;
-  tp1?: number;
-  tp2?: number;
-  tp3?: number;
-  rationale: string;
-}) {
-  return (
-    <div className="gp-card">
-
-      <div className="gp-cardHeader">
-
-        <div>
-          <div className="gp-cardTitle">
-            {props.title}
-          </div>
-
-          <div className="gp-cardMeta">
-            Señal IA
-          </div>
-        </div>
-
-        <div>
-          {props.side}
-        </div>
-
-      </div>
-
-      <div className="gp-form">
-
-        <div>
-          Confianza: {props.confidence}%
-        </div>
-
-        <div>
-          Entrada: {props.entry}
-        </div>
-
-        <div>
-          SL: {props.sl}
-        </div>
-
-        {props.tp1 && <div>TP1: {props.tp1}</div>}
-
-        {props.tp2 && <div>TP2: {props.tp2}</div>}
-
-        {props.tp3 && <div>TP3: {props.tp3}</div>}
-
-        <div>
-          {props.rationale}
-        </div>
-
-      </div>
     </div>
   );
 }
