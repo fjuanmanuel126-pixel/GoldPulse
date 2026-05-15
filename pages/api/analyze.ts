@@ -133,6 +133,7 @@ function getUsageMeta(req: NextApiRequest, unlimited = false) {
   }
 
   const usedToday = usageStore.get(key) || 0;
+
   return {
     key,
     usedToday,
@@ -149,9 +150,10 @@ function bumpUsage(key: string) {
 
 function parseForm(req: NextApiRequest): Promise<{ fields: formidable.Fields; files: formidable.Files }> {
   const form = formidable({
-    multiples: false,
+    multiples: true,
     keepExtensions: true,
     maxFileSize: 8 * 1024 * 1024,
+    maxFiles: 3,
   });
 
   return new Promise((resolve, reject) => {
@@ -167,10 +169,10 @@ function firstField(value: string | string[] | undefined) {
   return value ?? "";
 }
 
-function firstFile(value: File | File[] | undefined): File | null {
-  if (!value) return null;
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value;
+function getFiles(value: File | File[] | undefined): File[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean).slice(0, 3);
+  return [value].slice(0, 3);
 }
 
 function fileToDataUrl(file: File): string {
@@ -255,15 +257,19 @@ function extractJson(text: string): AgentOutput {
   } catch {
     const start = trimmed.indexOf("{");
     const end = trimmed.lastIndexOf("}");
+
     if (start >= 0 && end > start) {
       const maybe = trimmed.slice(start, end + 1);
       return JSON.parse(maybe);
     }
+
     throw new Error("No se pudo extraer JSON de la respuesta del modelo.");
   }
 }
 
-async function getUserAccessLevel(req: NextApiRequest): Promise<"free" | "premium" | "vip" | "admin" | null> {
+async function getUserAccessLevel(
+  req: NextApiRequest
+): Promise<"free" | "premium" | "vip" | "admin" | null> {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
@@ -305,6 +311,7 @@ export default async function handler(
   }
 
   const envKey = process.env.OPENAI_API_KEY;
+
   if (!envKey) {
     return res.status(500).json({ error: "Falta OPENAI_API_KEY en variables de entorno." });
   }
@@ -331,11 +338,24 @@ export default async function handler(
 
     const symbol = String(firstField(fields.symbol) || "XAUUSD");
     const timeframe = String(firstField(fields.timeframe) || "15m");
-    const currentPrice = Number(firstField(fields.currentPrice) || 0);
 
-    if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
+    const rawCurrentPrice = firstField(fields.currentPrice);
+    const parsedCurrentPrice = Number(rawCurrentPrice);
+    const hasValidCurrentPrice =
+      rawCurrentPrice !== "" &&
+      Number.isFinite(parsedCurrentPrice) &&
+      parsedCurrentPrice > 0;
+
+    const uploadedImages = [
+      ...getFiles(files.images as File | File[] | undefined),
+      ...getFiles(files.image as File | File[] | undefined),
+    ].slice(0, 3);
+
+    const hasImages = uploadedImages.length > 0;
+
+    if (!hasImages && !hasValidCurrentPrice) {
       return res.status(400).json({
-        error: "Precio actual inválido.",
+        error: "Debes escribir un precio actual válido o subir al menos una imagen del gráfico.",
         meta: {
           usedToday: usage.usedToday,
           remaining: usage.remaining,
@@ -345,8 +365,9 @@ export default async function handler(
       });
     }
 
-    const image = firstFile(files.image as File | File[] | undefined);
-    const imageDataUrl = image ? fileToDataUrl(image) : null;
+    const currentPrice = hasValidCurrentPrice ? parsedCurrentPrice : 0;
+
+    const imageDataUrls = uploadedImages.map(fileToDataUrl);
 
     const userPrompt = `
 Analiza este activo y devuelve SOLO JSON válido.
@@ -354,7 +375,17 @@ Analiza este activo y devuelve SOLO JSON válido.
 Datos:
 - symbol: ${symbol}
 - timeframe: ${timeframe}
-- currentPrice: ${currentPrice}
+- currentPrice: ${hasValidCurrentPrice ? currentPrice : "NO PROPORCIONADO"}
+- imagesProvided: ${hasImages ? imageDataUrls.length : 0}
+
+Instrucciones importantes:
+- Si currentPrice es NO PROPORCIONADO, analiza el precio visible del gráfico y usa la imagen como fuente principal.
+- Si hay varias imágenes, combínalas como contexto multi-timeframe o multi-gráfico.
+- Puedes analizar cualquier activo: oro, forex, índices, cripto, acciones o futuros.
+- Si no puedes leer exactamente un precio, estima la zona de entrada como rango.
+- No inventes datos fundamentales si no están claros.
+- Devuelve premium y momentum siempre que sea posible.
+- Si no hay currentPrice, el momentum debe usar una entrada estimada desde el gráfico o una zona aproximada.
 
 Necesito exactamente esta estructura:
 
@@ -383,7 +414,7 @@ Necesito exactamente esta estructura:
     "title": "GoldPulse Scalp",
     "side": "BUY o SELL",
     "confidence": 0,
-    "entry": ${currentPrice},
+    "entry": 0,
     "sl": 0,
     "tp1": 0,
     "tp2": 0,
@@ -397,7 +428,8 @@ Reglas:
 - premium y momentum deben existir siempre.
 - side solo puede ser BUY o SELL.
 - confidence entre 1 y 100.
-- Para el scalp, usa una estructura rápida y coherente con el currentPrice.
+- Si currentPrice existe, úsalo como referencia para el scalp.
+- Si currentPrice no existe, usa el gráfico para estimar la entrada.
 - No incluyas markdown.
 `;
 
@@ -408,12 +440,13 @@ Reglas:
       },
     ];
 
-    if (imageDataUrl) {
+    imageDataUrls.forEach((imageDataUrl) => {
       inputContent.push({
         type: "input_image",
         image_url: imageDataUrl,
+        detail: "auto",
       });
-    }
+    });
 
     const payload = {
       model: "gpt-4o-mini",
@@ -458,6 +491,7 @@ Reglas:
     }
 
     let parsedOpenAI: any;
+
     try {
       parsedOpenAI = JSON.parse(raw);
     } catch {
@@ -474,7 +508,9 @@ Reglas:
 
     const outputText =
       parsedOpenAI?.output_text ||
-      parsedOpenAI?.output?.map((x: any) => x?.content?.map((c: any) => c?.text).join(" ")).join(" ") ||
+      parsedOpenAI?.output
+        ?.map((x: any) => x?.content?.map((c: any) => c?.text).join(" "))
+        .join(" ") ||
       "";
 
     if (!outputText) {

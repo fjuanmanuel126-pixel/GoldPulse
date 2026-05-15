@@ -98,7 +98,7 @@ export default function Analyze() {
   const [currentPrice, setCurrentPrice] = useState("");
 
   const [fileName, setFileName] = useState<string>("No has subido imagen");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [premium, setPremium] = useState<PremiumSignal | null>(null);
@@ -167,8 +167,10 @@ export default function Analyze() {
     setFlash(null);
 
     const price = Number(currentPrice);
-    if (!Number.isFinite(price)) {
-      setError("Escribe un precio válido (número).");
+    const hasImages = files.length > 0;
+
+    if (!hasImages && !Number.isFinite(price)) {
+      setError("Escribe un precio válido o sube al menos una imagen del gráfico.");
       return;
     }
 
@@ -181,8 +183,11 @@ export default function Analyze() {
       const fd = new FormData();
       fd.append("symbol", symbol);
       fd.append("timeframe", timeframe);
-      fd.append("currentPrice", String(price));
-      if (file) fd.append("image", file);
+      fd.append("currentPrice", Number.isFinite(price) ? String(price) : "");
+
+      files.forEach((file) => {
+        fd.append("images", file);
+      });
 
       const r = await fetch("/api/analyze", {
         method: "POST",
@@ -361,8 +366,8 @@ export default function Analyze() {
             <div className="gp-pill">PANEL OPERATIVO</div>
             <h1 className="gp-heroTitle">Genera una señal con estructura y dirección operativa</h1>
             <p className="gp-heroText">
-              Selecciona el símbolo, timeframe y precio actual. Opcionalmente puedes subir una imagen
-              del gráfico para dar más contexto al análisis.
+              Selecciona el símbolo, timeframe y precio actual. También puedes subir hasta 3 imágenes
+              del gráfico para que el agente analice visualmente el mercado.
             </p>
 
             <div className="gp-quickStats">
@@ -444,13 +449,12 @@ export default function Analyze() {
                 <div className="gp-form">
                   <div>
                     <div className="gp-label">Símbolo</div>
-                    <select className="gp-select" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-                      {SYMBOLS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      className="gp-input"
+                      placeholder="Ej: XAUUSD, EURUSD, BTCUSDT, US30, SPX500..."
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value)}
+                    />
                   </div>
 
                   <div className="gp-row2">
@@ -473,7 +477,7 @@ export default function Analyze() {
                       <div className="gp-label">Precio actual</div>
                       <input
                         className="gp-input"
-                        placeholder="Ej: 5076.91"
+                        placeholder="Opcional si subes gráfico"
                         value={currentPrice}
                         onChange={(e) => setCurrentPrice(e.target.value)}
                       />
@@ -481,17 +485,24 @@ export default function Analyze() {
                   </div>
 
                   <div>
-                    <div className="gp-label">Gráfico (opcional)</div>
+                    <div className="gp-label">Gráficos (opcional · máximo 3)</div>
                     <div className="gp-uploadRow">
                       <input
                         ref={fileRef}
                         type="file"
                         accept="image/png,image/jpeg"
+                        multiple
                         style={{ display: "none" }}
                         onChange={(e) => {
-                          const f = e.target.files?.[0] || null;
-                          setFile(f);
-                          setFileName(f ? f.name : "No has subido imagen");
+                          const selected = Array.from(e.target.files || []).slice(0, 3);
+
+                          setFiles(selected);
+
+                          setFileName(
+                            selected.length > 0
+                              ? `${selected.length} imagen(es): ${selected.map((f) => f.name).join(", ")}`
+                              : "No has subido imagen"
+                          );
                         }}
                       />
                       <button type="button" className="gp-uploadBtn" onClick={() => fileRef.current?.click()}>
@@ -502,7 +513,7 @@ export default function Analyze() {
                   </div>
 
                   <div className="gp-help">
-                    Si no subes imagen, el agente analiza con precio + símbolo + timeframe.
+                    Si subes imágenes, el precio actual es opcional. Puedes cargar hasta 3 gráficos.
                   </div>
 
                   <button className="gp-btnPrimary" onClick={onGenerate} disabled={loading}>
@@ -1388,7 +1399,9 @@ function ResultCard(props: {
         <div>
           <div className="gp-cardTitle">{props.title}</div>
           <div className="gp-cardMeta">
-            {props.variant === "premium" ? "Señal institucional · Alta probabilidad" : "Señal Flash · Ejecución rápida"}
+            {props.variant === "premium"
+              ? "Señal institucional · Alta probabilidad"
+              : "Señal Flash · Ejecución rápida"}
           </div>
         </div>
 
@@ -1471,12 +1484,14 @@ function ResultCard(props: {
               <div className="gp-sectionText">{props.sections.technical}</div>
             </div>
           )}
+
           {props.sections?.fundamental && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Análisis Fundamental</div>
               <div className="gp-sectionText">{props.sections.fundamental}</div>
             </div>
           )}
+
           {props.sections?.sentiment && (
             <div className="gp-section">
               <div className="gp-sectionTitle">Sentimiento del Mercado</div>
