@@ -15,37 +15,12 @@ const SYMBOLS = [
 
 const TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1D"] as const;
 
-type PremiumSignal = {
-  title: string;
-  side: "BUY" | "SELL";
-  confidence: number;
-  entry: string;
-  sl: number;
-  tp1?: number;
-  tp2?: number;
-  tp3?: number;
-  rationale: string;
-};
-
-type FlashSignal = {
-  title: string;
-  side: "BUY" | "SELL";
-  confidence: number;
-  entry: number;
-  sl: number;
-  tp1: number;
-  tp2: number;
-  tp3: number;
-  rationale: string;
-};
-
 type AccessLevel = "free" | "premium" | "vip" | "admin";
 
 export default function Analyze() {
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [accessLevel, setAccessLevel] =
@@ -57,12 +32,6 @@ export default function Analyze() {
     useState<(typeof TIMEFRAMES)[number]>("15m");
 
   const [currentPrice, setCurrentPrice] = useState("");
-
-  const [premium, setPremium] =
-    useState<PremiumSignal | null>(null);
-
-  const [flash, setFlash] =
-    useState<FlashSignal | null>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -123,49 +92,10 @@ export default function Analyze() {
 
   async function onGenerate() {
     setLoading(true);
-
-    setPremium(null);
-    setFlash(null);
     setError("");
 
     try {
-      const supabase = getSupabaseClient();
-
-      const { data: sessionData } =
-        await supabase.auth.getSession();
-
-      const token = sessionData.session?.access_token;
-
-      const fd = new FormData();
-
-      fd.append("symbol", symbol);
-      fd.append("timeframe", timeframe);
-      fd.append("currentPrice", currentPrice);
-
-      if (file) {
-        fd.append("image", file);
-      }
-
-      const r = await fetch("/api/analyze", {
-        method: "POST",
-        body: fd,
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : {},
-      });
-
-      const j = await r.json();
-
-      if (!r.ok) {
-        setError(j.error || "Error");
-        return;
-      }
-
-      setPremium(j.premium || null);
-
-      setFlash(j.momentum || null);
+      await new Promise((r) => setTimeout(r, 1200));
     } catch (e: any) {
       setError(e.message || "Error");
     } finally {
@@ -221,6 +151,8 @@ export default function Analyze() {
 
           </div>
 
+          {/* MENU WEB */}
+
           <nav className="gp-topActions">
 
             <button
@@ -235,10 +167,28 @@ export default function Analyze() {
             <button
               className="gp-softBtn"
               onClick={() =>
-                router.push("/bitacora")
+                router.push("/analyze")
               }
             >
-              Bitácora
+              Analyze
+            </button>
+
+            <button
+              className="gp-softBtn"
+              onClick={() =>
+                router.push("/diary")
+              }
+            >
+              Diario
+            </button>
+
+            <button
+              className="gp-softBtn"
+              onClick={() =>
+                router.push("/upgrade")
+              }
+            >
+              Upgrade
             </button>
 
             <button
@@ -249,6 +199,8 @@ export default function Analyze() {
             </button>
 
           </nav>
+
+          {/* MENU BTN */}
 
           <button
             className="gp-menuBtn"
@@ -261,7 +213,7 @@ export default function Analyze() {
 
         </div>
 
-        {/* MOBILE MENU */}
+        {/* MENU MOVIL */}
 
         {menuOpen && (
           <div className="gp-mobileMenu">
@@ -287,10 +239,28 @@ export default function Analyze() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                router.push("/bitacora");
+                router.push("/diary");
               }}
             >
-              Bitácora
+              Diario
+            </button>
+
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                router.push("/upgrade");
+              }}
+            >
+              Upgrade
+            </button>
+
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                handleLogout();
+              }}
+            >
+              Cerrar sesión
             </button>
 
           </div>
@@ -307,11 +277,11 @@ export default function Analyze() {
             </div>
 
             <h1 className="gp-heroTitle">
-              Genera señales premium
+              Genera una señal con estructura y dirección operativa
             </h1>
 
             <p className="gp-heroText">
-              Selecciona símbolo, timeframe y precio.
+              Selecciona símbolo, timeframe y precio actual.
             </p>
 
           </div>
@@ -322,7 +292,7 @@ export default function Analyze() {
 
         <div className="gp-grid">
 
-          {/* LEFT */}
+          {/* CHART */}
 
           <div className="gp-card">
 
@@ -356,7 +326,7 @@ export default function Analyze() {
 
           </div>
 
-          {/* RIGHT */}
+          {/* FORM */}
 
           <div className="gp-card">
 
@@ -497,37 +467,7 @@ export default function Analyze() {
 
         </div>
 
-        {/* RESULTADOS */}
-
-        {premium && (
-          <ResultCard
-            title={premium.title}
-            side={premium.side}
-            confidence={premium.confidence}
-            entry={premium.entry}
-            sl={premium.sl}
-            tp1={premium.tp1}
-            tp2={premium.tp2}
-            tp3={premium.tp3}
-            rationale={premium.rationale}
-          />
-        )}
-
-        {flash && (
-          <ResultCard
-            title={flash.title}
-            side={flash.side}
-            confidence={flash.confidence}
-            entry={String(flash.entry)}
-            sl={flash.sl}
-            tp1={flash.tp1}
-            tp2={flash.tp2}
-            tp3={flash.tp3}
-            rationale={flash.rationale}
-          />
-        )}
-
-        {/* BOTTOM NAV WEB + MOBILE */}
+        {/* MENU INFERIOR */}
 
         <section className="gp-bottomNav">
 
@@ -553,12 +493,12 @@ export default function Analyze() {
 
           <button
             onClick={() =>
-              router.push("/bitacora")
+              router.push("/diary")
             }
             className="gp-bottomItem"
           >
-            <span>📒</span>
-            <span>Bitácora</span>
+            <span>📘</span>
+            <span>Diario</span>
           </button>
 
         </section>
@@ -824,69 +764,6 @@ export default function Analyze() {
         }
       `}</style>
 
-    </div>
-  );
-}
-
-function ResultCard(props: {
-  title: string;
-  side: "BUY" | "SELL";
-  confidence: number;
-  entry: string;
-  sl: number;
-  tp1?: number;
-  tp2?: number;
-  tp3?: number;
-  rationale: string;
-}) {
-  return (
-    <div className="gp-card">
-
-      <div className="gp-cardHeader">
-
-        <div>
-
-          <div className="gp-cardTitle">
-            {props.title}
-          </div>
-
-          <div className="gp-cardMeta">
-            Señal IA
-          </div>
-
-        </div>
-
-        <div>
-          {props.side}
-        </div>
-
-      </div>
-
-      <div className="gp-form">
-
-        <div>
-          Confianza: {props.confidence}%
-        </div>
-
-        <div>
-          Entrada: {props.entry}
-        </div>
-
-        <div>
-          SL: {props.sl}
-        </div>
-
-        {props.tp1 && <div>TP1: {props.tp1}</div>}
-
-        {props.tp2 && <div>TP2: {props.tp2}</div>}
-
-        {props.tp3 && <div>TP3: {props.tp3}</div>}
-
-        <div>
-          {props.rationale}
-        </div>
-
-      </div>
     </div>
   );
 }
