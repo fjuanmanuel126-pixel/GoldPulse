@@ -1,529 +1,306 @@
 export default function BitacoraPage() {
   return (
     <main className="page">
-      <div className="overlay" />
-
       <section className="hero">
         <div>
-          <p className="eyebrow">GOLDPULSE BITÁCORA</p>
-
-          <h1>
-            Trading Journal <span>PRO</span>
-          </h1>
-
+          <p className="badge">GOLDPULSE BITÁCORA PRO</p>
+          <h1>Account MetriX</h1>
           <p className="sub">
-            Panel avanzado de métricas, estadísticas y seguimiento
-            profesional para cuentas MT5.
+            Panel manual para cargar historial MT5, revisar cuentas independientes,
+            métricas, drawdown, calendario y resultados.
           </p>
         </div>
 
-        <button className="connectBtn">
-          Conectar cuenta MT5
-        </button>
+        <button>Importar historial MT5</button>
       </section>
 
-      <section className="topGrid">
-        <Card
-          title="Balance"
-          value="$9,709.63"
-        />
-
-        <Card
-          title="Equity"
-          value="$9,709.63"
-        />
-
-        <Card
-          title="Beneficio Hoy"
-          value="+$55.12"
-          green
-        />
-
-        <Card
-          title="Drawdown"
-          value="-3.1%"
-          red
-        />
+      <section className="cards">
+        <Card title="Balance" value="$9,709.63" />
+        <Card title="Equity" value="$9,709.63" />
+        <Card title="Profit Hoy" value="+$55.12" green />
+        <Card title="Drawdown" value="-2.9%" red />
       </section>
 
-      <section className="layout">
-        <div className="left">
-          <div className="panel">
-            <div className="panelTop">
-              <div>
-                <p className="mini">Cuenta activa</p>
-
-                <h2>FTMO Challenge 10K</h2>
-              </div>
-
-              <div className="status">
-                ACTIVA
-              </div>
+      <section className="grid">
+        <div className="panel big">
+          <div className="top">
+            <div>
+              <p className="mini">Cuenta activa</p>
+              <h2>FTMO Challenge 10K</h2>
             </div>
-
-            <div className="chart">
-              <div className="line line1"></div>
-              <div className="line line2"></div>
-
-              <div className="fakeChart">
-                <div className="curve"></div>
-              </div>
-            </div>
+            <span className="active">ACTIVA</span>
           </div>
 
-          <div className="panel">
-            <div className="panelTop">
-              <div>
-                <p className="mini">Trading Calendar</p>
-                <h2>Mayo 2026</h2>
-              </div>
-
-              <div className="profitMonth">
-                +$314.22
-              </div>
-            </div>
-
-            <div className="calendar">
-              {Array.from({ length: 31 }, (_, i) => (
-                <div
-                  key={i}
-                  className={`day ${
-                    i === 5
-                      ? "negative"
-                      : [1, 4, 7, 12, 15].includes(i)
-                      ? "positive"
-                      : ""
-                  }`}
-                >
-                  <strong>{i + 1}</strong>
-
-                  {[1, 4, 7, 12, 15].includes(i) && (
-                    <span>+$55</span>
-                  )}
-
-                  {i === 5 && (
-                    <span>-$145</span>
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="chart">
+            <div className="curve" />
           </div>
         </div>
 
-        <aside className="right">
-          <div className="panel">
-            <p className="mini">
-              Objetivos
-            </p>
+        <div className="panel">
+          <p className="mini">Objetivos</p>
+          <h2>Estado de cuenta</h2>
 
-            <h2>Estado de cuenta</h2>
+          <Row label="Pérdida diaria" value="-$500" />
+          <Row label="Pérdida total" value="-$1,000" />
+          <Row label="Profit actual" value="+$314.22" green />
+          <Row label="Cuenta inicial" value="$10,000" />
+        </div>
+      </section>
 
-            <div className="objective">
-              <span>Pérdida máxima diaria</span>
-              <strong>-$500</strong>
-            </div>
-
-            <div className="objective">
-              <span>Pérdida máxima total</span>
-              <strong>-$1,000</strong>
-            </div>
-
-            <div className="objective">
-              <span>Profit actual</span>
-
-              <strong className="green">
-                +$314.22
-              </strong>
-            </div>
+      <section className="panel">
+        <div className="top">
+          <div>
+            <p className="mini">Trading Calendar</p>
+            <h2>Mayo 2026</h2>
           </div>
+          <strong className="green">+$314.22</strong>
+        </div>
 
-          <div className="panel">
-            <p className="mini">
-              Estadísticas
-            </p>
+        <div className="calendar">
+          {Array.from({ length: 31 }, (_, i) => {
+            const day = i + 1;
+            const positive = [1, 4, 7, 12, 15].includes(day);
+            const negative = day === 6;
 
-            <h2>Métricas</h2>
-
-            <div className="stats">
-              <Stat
-                label="Winrate"
-                value="68%"
-              />
-
-              <Stat
-                label="Trades"
-                value="42"
-              />
-
-              <Stat
-                label="Profit Factor"
-                value="2.3"
-              />
-
-              <Stat
-                label="Lotes"
-                value="4.21"
-              />
-
-              <Stat
-                label="Avg Win"
-                value="+$72"
-                green
-              />
-
-              <Stat
-                label="Avg Loss"
-                value="-$31"
-                red
-              />
-            </div>
-          </div>
-        </aside>
+            return (
+              <div
+                key={day}
+                className={`day ${positive ? "pos" : ""} ${negative ? "neg" : ""}`}
+              >
+                <b>{day}</b>
+                {positive && <span>+$55</span>}
+                {negative && <span>-$145</span>}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <style jsx>{`
         .page {
           min-height: 100vh;
-          background:
-            radial-gradient(circle at top left, rgba(0,255,200,0.08), transparent 30%),
-            radial-gradient(circle at top right, rgba(0,140,255,0.10), transparent 30%),
-            #050816;
-
-          color: white;
           padding: 40px;
-          position: relative;
-          overflow: hidden;
-          font-family: Inter, sans-serif;
-        }
-
-        .overlay {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-
-          background-size: 40px 40px;
-          opacity: 0.2;
-          pointer-events: none;
+          color: white;
+          background:
+            radial-gradient(circle at 20% 20%, rgba(245, 195, 107, 0.18), transparent 28%),
+            radial-gradient(circle at 80% 10%, rgba(36, 214, 255, 0.16), transparent 30%),
+            radial-gradient(circle at 50% 100%, rgba(0, 255, 180, 0.08), transparent 35%),
+            #050816;
+          font-family: Inter, Arial, sans-serif;
         }
 
         .hero {
-          position: relative;
-          z-index: 2;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 35px;
-          gap: 30px;
+          gap: 24px;
+          padding: 32px;
+          border-radius: 28px;
+          background: rgba(255, 255, 255, 0.045);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(18px);
+          margin-bottom: 24px;
         }
 
-        .eyebrow {
-          color: #00ffd0;
+        .badge {
+          color: #f5c36b;
           letter-spacing: 2px;
-          font-size: 13px;
-          font-weight: 800;
-          margin-bottom: 12px;
+          font-size: 12px;
+          font-weight: 900;
         }
 
         h1 {
           font-size: 58px;
           margin: 0;
-          font-weight: 900;
           line-height: 1;
         }
 
-        h1 span {
-          color: #00ffd0;
-        }
-
         .sub {
-          max-width: 620px;
-          color: rgba(255,255,255,0.65);
-          margin-top: 18px;
-          font-size: 18px;
+          max-width: 650px;
+          color: rgba(255, 255, 255, 0.68);
           line-height: 1.6;
+          font-size: 17px;
         }
 
-        .connectBtn {
-          background: linear-gradient(135deg,#00ffd0,#0095ff);
-          border: none;
-          color: black;
-          font-weight: 800;
-          padding: 18px 28px;
+        button {
+          border: 0;
+          padding: 16px 22px;
           border-radius: 16px;
-          font-size: 16px;
+          font-weight: 900;
           cursor: pointer;
-          box-shadow: 0 0 30px rgba(0,255,208,0.25);
+          background: linear-gradient(135deg, #f5c36b, #24d6ff);
+          color: #050816;
+          box-shadow: 0 0 36px rgba(245, 195, 107, 0.22);
         }
 
-        .topGrid {
-          position: relative;
-          z-index: 2;
+        .cards {
           display: grid;
-          grid-template-columns: repeat(4,1fr);
-          gap: 20px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
           margin-bottom: 24px;
         }
 
         .card,
         .panel {
-          background: rgba(15,23,42,0.72);
-          border: 1px solid rgba(255,255,255,0.08);
-          backdrop-filter: blur(18px);
+          background: rgba(255, 255, 255, 0.045);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 24px;
           padding: 24px;
-          box-shadow:
-            0 10px 40px rgba(0,0,0,0.35),
-            inset 0 1px rgba(255,255,255,0.06);
+          box-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
+          backdrop-filter: blur(18px);
         }
 
-        .card p {
-          color: rgba(255,255,255,0.55);
-          margin-bottom: 12px;
+        .card p,
+        .mini {
+          color: rgba(255, 255, 255, 0.55);
+          margin: 0 0 8px;
         }
 
         .card h2 {
+          font-size: 32px;
           margin: 0;
-          font-size: 34px;
         }
 
-        .green {
-          color: #00ffbf;
-        }
-
-        .red {
-          color: #ff4d6d;
-        }
-
-        .layout {
-          position: relative;
-          z-index: 2;
+        .grid {
           display: grid;
-          grid-template-columns: 2fr 1fr;
+          grid-template-columns: 1.5fr 0.9fr;
           gap: 24px;
+          margin-bottom: 24px;
         }
 
-        .left,
-        .right {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .panelTop {
+        .top {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 28px;
+          gap: 16px;
+          margin-bottom: 20px;
         }
 
-        .mini {
-          color: rgba(255,255,255,0.45);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          font-size: 12px;
-          margin-bottom: 8px;
-        }
-
-        .panel h2 {
+        h2 {
           margin: 0;
           font-size: 28px;
         }
 
-        .status {
-          background: rgba(0,255,191,0.15);
-          color: #00ffbf;
-          padding: 12px 18px;
+        .active {
+          color: #3ee089;
+          background: rgba(62, 224, 137, 0.12);
+          border: 1px solid rgba(62, 224, 137, 0.24);
+          padding: 10px 14px;
           border-radius: 999px;
-          font-weight: 800;
-          border: 1px solid rgba(0,255,191,0.25);
+          font-weight: 900;
+          font-size: 12px;
         }
 
         .chart {
-          height: 320px;
-          border-radius: 18px;
+          height: 310px;
           position: relative;
           overflow: hidden;
+          border-radius: 20px;
           background:
-            linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
-        }
-
-        .line {
-          position: absolute;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: rgba(255,255,255,0.08);
-        }
-
-        .line1 {
-          top: 35%;
-        }
-
-        .line2 {
-          top: 70%;
-        }
-
-        .fakeChart {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: flex-end;
-          padding: 30px;
+            linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+          background-size: 42px 42px;
         }
 
         .curve {
-          width: 100%;
-          height: 70%;
+          position: absolute;
+          left: 28px;
+          right: 28px;
+          bottom: 28px;
+          height: 68%;
           border-radius: 18px;
           background:
-            linear-gradient(180deg, rgba(0,255,208,0.35), transparent),
-            linear-gradient(90deg,#00ffd0,#008cff);
-
-          clip-path: polygon(
-            0% 100%,
-            5% 85%,
-            10% 88%,
-            18% 60%,
-            25% 64%,
-            32% 40%,
-            40% 50%,
-            48% 20%,
-            58% 35%,
-            66% 10%,
-            75% 18%,
-            82% 5%,
-            100% 0,
-            100% 100%
-          );
-
-          opacity: 0.95;
+            linear-gradient(180deg, rgba(245,195,107,.40), transparent),
+            linear-gradient(90deg, #f5c36b, #24d6ff);
+          clip-path: polygon(0% 100%, 8% 82%, 16% 88%, 25% 58%, 34% 64%, 44% 35%, 55% 48%, 66% 18%, 78% 30%, 88% 8%, 100% 0, 100% 100%);
         }
 
-        .profitMonth {
-          color: #00ffbf;
-          font-size: 24px;
-          font-weight: 800;
+        .row {
+          display: flex;
+          justify-content: space-between;
+          padding: 16px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.09);
+          color: rgba(255,255,255,0.68);
+        }
+
+        .row b {
+          color: white;
+        }
+
+        .green {
+          color: #3ee089 !important;
+        }
+
+        .red {
+          color: #ff6b81 !important;
         }
 
         .calendar {
           display: grid;
-          grid-template-columns: repeat(7,1fr);
+          grid-template-columns: repeat(7, 1fr);
           gap: 12px;
         }
 
         .day {
-          min-height: 90px;
-          border-radius: 16px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.05);
+          min-height: 86px;
           padding: 12px;
+          border-radius: 16px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
         }
 
-        .day strong {
-          color: rgba(255,255,255,0.65);
+        .day b {
+          color: rgba(255,255,255,0.7);
         }
 
         .day span {
-          font-size: 14px;
-          font-weight: 800;
+          font-weight: 900;
         }
 
-        .day.positive {
-          background: rgba(0,255,191,0.08);
-          border-color: rgba(0,255,191,0.15);
+        .day.pos {
+          background: rgba(62,224,137,0.11);
+          border-color: rgba(62,224,137,0.24);
         }
 
-        .day.positive span {
-          color: #00ffbf;
+        .day.pos span {
+          color: #3ee089;
         }
 
-        .day.negative {
-          background: rgba(255,77,109,0.08);
-          border-color: rgba(255,77,109,0.18);
+        .day.neg {
+          background: rgba(255,107,129,0.11);
+          border-color: rgba(255,107,129,0.24);
         }
 
-        .day.negative span {
-          color: #ff4d6d;
+        .day.neg span {
+          color: #ff6b81;
         }
 
-        .objective {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 18px 0;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .objective span {
-          color: rgba(255,255,255,0.65);
-        }
-
-        .objective strong {
-          font-size: 18px;
-        }
-
-        .stats {
-          display: grid;
-          grid-template-columns: repeat(2,1fr);
-          gap: 16px;
-          margin-top: 20px;
-        }
-
-        .stat {
-          background: rgba(255,255,255,0.03);
-          border-radius: 18px;
-          padding: 18px;
-        }
-
-        .stat p {
-          color: rgba(255,255,255,0.45);
-          margin-bottom: 10px;
-        }
-
-        .stat h3 {
-          margin: 0;
-          font-size: 24px;
-        }
-
-        @media(max-width:1100px){
-          .topGrid{
-            grid-template-columns:1fr 1fr;
+        @media (max-width: 900px) {
+          .hero,
+          .top {
+            flex-direction: column;
+            align-items: flex-start;
           }
 
-          .layout{
-            grid-template-columns:1fr;
+          .cards,
+          .grid {
+            grid-template-columns: 1fr;
           }
 
-          .calendar{
-            grid-template-columns:repeat(3,1fr);
-          }
-        }
-
-        @media(max-width:700px){
-          .page{
-            padding:20px;
+          .calendar {
+            grid-template-columns: repeat(2, 1fr);
           }
 
-          h1{
-            font-size:42px;
+          h1 {
+            font-size: 40px;
           }
 
-          .hero{
-            flex-direction:column;
-            align-items:flex-start;
-          }
-
-          .topGrid{
-            grid-template-columns:1fr;
-          }
-
-          .calendar{
-            grid-template-columns:repeat(2,1fr);
+          .page {
+            padding: 20px;
           }
         }
       `}</style>
@@ -545,48 +322,24 @@ function Card({
   return (
     <div className="card">
       <p>{title}</p>
-
-      <h2
-        className={
-          green
-            ? "green"
-            : red
-            ? "red"
-            : ""
-        }
-      >
-        {value}
-      </h2>
+      <h2 className={green ? "green" : red ? "red" : ""}>{value}</h2>
     </div>
   );
 }
 
-function Stat({
+function Row({
   label,
   value,
   green,
-  red,
 }: {
   label: string;
   value: string;
   green?: boolean;
-  red?: boolean;
 }) {
   return (
-    <div className="stat">
-      <p>{label}</p>
-
-      <h3
-        className={
-          green
-            ? "green"
-            : red
-            ? "red"
-            : ""
-        }
-      >
-        {value}
-      </h3>
+    <div className="row">
+      <span>{label}</span>
+      <b className={green ? "green" : ""}>{value}</b>
     </div>
   );
 }
